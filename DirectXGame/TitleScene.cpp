@@ -18,9 +18,6 @@ void TitleScene::Initialize() {
 	camera_.UpdateMatrix();
 
 	worldTransformPlayer_.scale_ = {2.0f, 2.0f, 2.0f};
-	worldTransformPlayer_.rotation_.y = 3.14f;
-	worldTransformPlayer_.translation_.z = -2.5f;
-
 	worldTransformPlayer_.TransferMatrix();
 
 	vibeTimer_ = 0.0f;
