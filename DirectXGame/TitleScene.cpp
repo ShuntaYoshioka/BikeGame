@@ -2,19 +2,28 @@
 
 using namespace KamataEngine;
 
-TitleScene::~TitleScene() {
-
-	delete fade_;
- }
+TitleScene::~TitleScene() { delete fade_; }
 
 void TitleScene::Initialize() {
-	// 3Dモデル
 
-	// カメラ初期化
-	camera_.Initialize();
+	// 3Dモデル
+	modelPlayer_ = Model::CreateFromOBJ("player", true);
 
 	worldTransform_.Initialize();
 	worldTransformPlayer_.Initialize();
+	// カメラ初期化
+	camera_.Initialize();
+	camera_.translation_ = {9.0f, 1.5f, 1.5f};
+	camera_.rotation_ = {0.0f, -1.57f, 0.0f};
+	camera_.UpdateMatrix();
+
+	worldTransformPlayer_.scale_ = {2.0f, 2.0f, 2.0f};
+	worldTransformPlayer_.rotation_.y = 3.14f;
+	worldTransformPlayer_.translation_.z = -2.5f;
+
+	worldTransformPlayer_.TransferMatrix();
+
+	vibeTimer_ = 0.0f;
 
 	fade_ = new Fade();
 	fade_->Initialize();
@@ -24,11 +33,23 @@ void TitleScene::Initialize() {
 
 void TitleScene::Update() {
 
+	vibeTimer_ += 0.5f;
+
+	if (static_cast<int>(vibeTimer_) % 6 == 0) {
+		vibeY_ = ((std::rand() % 100) / 100.0f - 0.5f) * 0.16f;
+	} else {
+		vibeY_ = ((std::rand() % 100) / 100.0f - 0.5f) * 0.03f;
+	}
+	camera_.translation_.x = 9.0f;
+	camera_.translation_.y = 1.5f + vibeY_;
+	camera_.translation_.z = 1.5f;
+	camera_.UpdateMatrix();
+
 	switch (phase_) {
 	case Phase::kMain:
 		if (Input::GetInstance()->PushKey(DIK_SPACE)) {
 			phase_ = Phase::kFadeOut;
-			fade_->Start(Fade::Status::FadeOut, 1.0f, Fade::Type::kSmoke);
+			fade_->Start(Fade::Status::FadeOut, 3.0f, Fade::Type::kSmoke);
 		}
 		break;
 	case Phase::kFadeIn:
@@ -43,7 +64,6 @@ void TitleScene::Update() {
 			finished_ = true;
 		}
 	}
-
 }
 
 void TitleScene::Draw() {
@@ -52,7 +72,10 @@ void TitleScene::Draw() {
 
 	Model::PreDraw(dxCommon->GetCommandList());
 
-Model::PostDraw();
+	if (modelPlayer_) {
+		modelPlayer_->Draw(worldTransformPlayer_, camera_);
+	}
+	Model::PostDraw();
 
-fade_->Draw();
+	fade_->Draw();
 }

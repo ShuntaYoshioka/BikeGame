@@ -36,19 +36,23 @@ void Player::Update() {
 		}
 
 		Input* input = Input::GetInstance();
-		if (input->PushKey(DIK_A) || input->PushKey(DIK_LEFT)) {
-			worldTransform_.rotation_.y -= kTurnSpeed;
-		}
-		if (input->PushKey(DIK_D) || input->PushKey(DIK_RIGHT)) {
-			worldTransform_.rotation_.y += kTurnSpeed;
+
+		if (input->PushKey(DIK_W)) {
+			worldTransform_.translation_.x += velocity_.x;
+			worldTransform_.translation_.z += velocity_.z;
+
+			if (input->PushKey(DIK_A)) {
+				worldTransform_.rotation_.y -= kTurnSpeed;
+			}
+			if (input->PushKey(DIK_D)) {
+				worldTransform_.rotation_.y += kTurnSpeed;
+			}
 		}
 
 		velocity_.x = std::sin(worldTransform_.rotation_.y) * kForwardSpeed;
 		velocity_.z = std::cos(worldTransform_.rotation_.y) * kForwardSpeed;
 
-		worldTransform_.translation_.x += velocity_.x;
-		worldTransform_.translation_.z += velocity_.z;
-		worldTransform_.translation_.y = 1.0f; 
+		worldTransform_.translation_.y = 1.0f;
 
 		worldTransform_.translation_.x = (std::clamp)(worldTransform_.translation_.x, 1.0f, 17.0f);
 
@@ -68,8 +72,6 @@ void Player::Draw() {
 		}
 	}
 }
-
-
 
 KamataEngine::Vector3 Player::GetWorldPosition() { return worldTransform_.translation_; }
 
@@ -92,6 +94,4 @@ void Player::RestoreFuel(float amount) {
 	}
 }
 
-void Player::OnCollision(const Enemy* enemy) {
-	(void)enemy;
-}
+void Player::OnCollision(const Enemy* enemy) { (void)enemy; }

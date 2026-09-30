@@ -4,7 +4,6 @@
 #include "Fade.h"
 class TitleScene {
 public:
-
 	enum class Phase {
 		kFadeIn,
 		kMain,
@@ -26,6 +25,12 @@ public:
 
 private:
 	bool finished_ = false;
+
+	KamataEngine::Model* modelPlayer_ = nullptr;
+
+	float vibeTimer_ = 0.0f;
+
+	float vibeY_ = 0.0f;
 
 	Fade* fade_ = nullptr;
 
