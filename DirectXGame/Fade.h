@@ -7,6 +7,7 @@ public:
 	enum class Type {
 		kFade,
 		kStripe,
+		kIrisOut,
 		kSmoke
 	};
 
@@ -67,4 +68,7 @@ private:
 		float t = 1.0f - x;
 		return 1.0f - (t * t * t);
 	}
+
+
+	std::array<KamataEngine::Sprite*, 4> irisSprites_;
 };

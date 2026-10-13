@@ -109,9 +109,9 @@ void TitleScene::Update() {
 	worldTransformTitle_.matWorld_ = MakeAffineMatrix(worldTransformTitle_.scale_, worldTransformTitle_.rotation_, worldTransformTitle_.translation_);
 	worldTransformTitle_.TransferMatrix();
 
-	//サウンド
+	// サウンド
 	bikeSoundPlayTimer_++;
-	if (bikeSoundPlayTimer_ >=360) {
+	if (bikeSoundPlayTimer_ >= 360) {
 		Audio::GetInstance()->PlayWave(soundHandleBike_, false, 0.2f);
 
 		// タイマーをリセット
@@ -121,10 +121,55 @@ void TitleScene::Update() {
 	switch (phase_) {
 	case Phase::kMain:
 		if (Input::GetInstance()->PushKey(DIK_SPACE)) {
-			phase_ = Phase::kFadeOut;
-			fade_->Start(Fade::Status::FadeOut, 3.0f, Fade::Type::kSmoke);
+			phase_ = Phase::kRunAway;
+			runAwayTimer_ = 0.0f;
 		}
 		break;
+	case Phase::kRunAway: {
+		// 1. 道路は通常のスピードで流れ続ける
+		roadZ_ -= kRoadSpeed;
+		if (roadZ_ <= kRoadLoopZ) {
+			roadZ_ = kRoadResetZ;
+		}
+
+		for (int i = 0; i < 4; ++i) {
+			worldTransformRoad_[i].translation_.z -= kRoadSpeed;
+
+			if (worldTransformRoad_[i].translation_.z <= -kRoadLength) {
+				float maxZ = worldTransformRoad_[0].translation_.z;
+				for (int j = 1; j < 4; ++j) {
+					if (worldTransformRoad_[j].translation_.z > maxZ) {
+						maxZ = worldTransformRoad_[j].translation_.z;
+					}
+				}
+				worldTransformRoad_[i].translation_.z = maxZ + kRoadLength;
+			}
+
+			worldTransformRoad_[i].matWorld_ = MakeAffineMatrix(worldTransformRoad_[i].scale_, worldTransformRoad_[i].rotation_, worldTransformRoad_[i].translation_);
+			worldTransformRoad_[i].TransferMatrix();
+		}
+
+		// 2. バイクは走り続けながら奥へ進む
+		worldTransformPlayer_.translation_.z += 0.25f;
+
+		vibeTimer_ += 0.5f;
+		if (static_cast<int>(vibeTimer_) % 6 == 0) {
+			vibeY_ = ((std::rand() % 100) / 100.0f - 0.5f) * 0.16f;
+		} else {
+			vibeY_ = ((std::rand() % 100) / 100.0f - 0.5f) * 0.03f;
+		}
+		worldTransformPlayer_.translation_.y = 0.0f + vibeY_;
+
+		worldTransformPlayer_.matWorld_ = MakeAffineMatrix(worldTransformPlayer_.scale_, worldTransformPlayer_.rotation_, worldTransformPlayer_.translation_);
+		worldTransformPlayer_.TransferMatrix();
+
+		// 3. 一定時間経過したらアイリスアウト開始
+		runAwayTimer_ += 1.0f;
+		if (runAwayTimer_ >= 90.0f) {
+			phase_ = Phase::kFadeOut;
+			fade_->Start(Fade::Status::FadeOut, 1.5f, Fade::Type::kIrisOut);
+		}
+	} break;
 	case Phase::kFadeIn:
 		fade_->Update();
 		if (fade_->isFinished()) {
@@ -133,6 +178,9 @@ void TitleScene::Update() {
 		break;
 	case Phase::kFadeOut:
 		fade_->Update();
+
+		worldTransformPlayer_.translation_.z += 0.25f;
+
 		if (fade_->isFinished()) {
 			finished_ = true;
 		}

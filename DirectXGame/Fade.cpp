@@ -26,6 +26,11 @@ void Fade::Initialize() {
 	bikeSprite_ = Sprite::Create(bikeTextureHandle_, {0.0f, 0.0f});
 	bikeSprite_->SetSize(Vector2(128.0f, 64.0f));
 	bikeSprite_->SetColor(Vector4(0.2f, 0.2f, 0.2f, 1.0f));
+
+	for (int i = 0; i < 4; i++) {
+		irisSprites_[i] = Sprite::Create(textureHandle_, {0, 0});
+		irisSprites_[i]->SetColor(Vector4(0, 0, 0, 1)); // 黒色
+	}
 }
 
 void Fade::Update() {
@@ -115,7 +120,40 @@ void Fade::Update() {
 				smoke.sprite->SetPosition(KamataEngine::Vector2(smoke.position.x - size * 0.5f, smoke.position.y - size * 0.5f));
 			}
 
+		} else if (type_ == Type::kIrisOut) {
+			// 【スクエア・アイリスアウト】4枚の黒い幕で中央を塞いでいく
+			float progress = std::clamp(counter_ / duration_, 0.0f, 1.0f);
+			float easeProg = EaseOutCubic(progress);
 
+			// 中央の「空いている穴」のサイズ（1280x720 から 0 へ小さくなる）
+			float holeW = 1280.0f * (1.0f - easeProg);
+			float holeH = 720.0f * (1.0f - easeProg);
+
+			// ★ここを調整：中心位置（640.0f）から右にずらしたい場合はプラスする（例: +200.0f）
+			float centerX =920.0f;
+			float centerY = 360.0f;
+
+			// 穴の位置
+			float holeX = centerX - holeW * 0.5f;
+			float holeY = centerY - holeH * 0.5f;
+
+			// --- 4枚の幕の位置とサイズを設定 ---
+
+			// 1. 上の幕
+			irisSprites_[0]->SetPosition(Vector2(0, 0));
+			irisSprites_[0]->SetSize(Vector2(1280, holeY));
+
+			// 2. 下の幕
+			irisSprites_[1]->SetPosition(Vector2(0, holeY + holeH));
+			irisSprites_[1]->SetSize(Vector2(1280, 720 - (holeY + holeH)));
+
+			// 3. 左の幕（上の幕と下の幕の間の高さを埋める）
+			irisSprites_[2]->SetPosition(Vector2(0, holeY));
+			irisSprites_[2]->SetSize(Vector2(holeX, holeH));
+
+			// 4. 右の幕（上の幕と下の幕の間の高さを埋める）
+			irisSprites_[3]->SetPosition(Vector2(holeX + holeW, holeY));
+			irisSprites_[3]->SetSize(Vector2(1280 - (holeX + holeW), holeH));
 
 		} else {
 			// 【従来フェード】元のコードと同じ（徐々に黒くする）
@@ -140,9 +178,13 @@ void Fade::Draw() {
 			stripes_[i].sprite->Draw();
 		}
 	} else if (type_ == Type::kSmoke) {
-		//Bikeの描画をする
+		// Bikeの描画をする
 		for (auto& smoke : smokes_) {
 			smoke.sprite->Draw();
+		}
+	} else if (type_ == Type::kIrisOut) {
+		for (int i = 0; i < 4; i++) {
+			irisSprites_[i]->Draw();
 		}
 	} else if (type_ == Type::kFade) {
 		sprite_->Draw();
@@ -165,7 +207,9 @@ void Fade::Start(Status status, float duration, Type type) {
 	if (type_ == Type::kSmoke) {
 		bikePos_ = Vector2(-150.0f, 360.0f); // 画面サイズ720pxのうち、Y=600（下部）を走行
 	}
+
 	smokes_.clear();
+
 	if (type_ == Type::kStripe) {
 		float stripeHeight = 720.0f / static_cast<float>(kStripeCount);
 
@@ -182,6 +226,13 @@ void Fade::Start(Status status, float duration, Type type) {
 
 			stripes_[i].sprite->SetPosition(Vector2(posX, posY));
 		}
+	}
+
+	if (type_ == Type::kIrisOut) {
+		// 開始時は画面全体を覆うようにセット
+		sprite_->SetSize(Vector2(1280.0f, 720.0f));
+		sprite_->SetPosition(Vector2(0.0f, 0.0f));
+		sprite_->SetColor(Vector4(0, 0, 0, 1.0f));
 	}
 }
 

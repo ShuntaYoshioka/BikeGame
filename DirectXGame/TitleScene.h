@@ -8,6 +8,7 @@ public:
 	enum class Phase {
 		kFadeIn,
 		kMain,
+		kRunAway,
 		kFadeOut,
 	};
 
@@ -62,4 +63,7 @@ private:
 	Fade* fade_ = nullptr;
 
 	Phase phase_ = Phase::kFadeIn;
+
+	//発射演出タイマー
+	float runAwayTimer_ = 0.0f;
 };
