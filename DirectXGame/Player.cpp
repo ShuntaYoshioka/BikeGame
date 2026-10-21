@@ -1,7 +1,9 @@
 #include "Player.h"
+#include "MapChipField.h"
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <windows.h>
 
 using namespace KamataEngine;
 
@@ -26,18 +28,44 @@ void Player::Initialize(Model* model, Camera* camera, const Vector3& position) {
 
 void Player::Update() {
 
-	if (isDead_)
+	if (isDead_) {
 		return;
+	}
 
-	if (fuel_ > 0.0f) {
-		fuel_ -= kFuelConsumption;
-		if (fuel_ <= 0.0f) {
-			fuel_ = 0.0f;
+	prevPosition_ = worldTransform_.translation_;
+
+	currentForwardSpeed_ = kForwardSpeed;
+
+	// マップチップの種類を取得し応じた処理を行う
+	if (mapChipField_) {
+		MapChipField::IndexSet indexSet = mapChipField_->GetMapChipIndexSetByPosition(worldTransform_.translation_);
+
+		// レイヤー0とレイヤー1の両方を確認
+		MapChipType typeLayer0 = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex, 1);
+		MapChipType typeLayer1 = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex, 0);
+
+		if (typeLayer0 == MapChipType::kFuel) {
+			RestoreFuel(0.5f);
 		}
 
+		if (typeLayer1 == MapChipType::klord) {
+			currentForwardSpeed_ = kRoadSpeed;
+		}
+	}
+
+	//前後同時押しを考慮した移動処理
+	if (fuel_ > 0.0f) {
 		Input* input = Input::GetInstance();
 
-		if (input->PushKey(DIK_W)) {
+		isMovingForward = input->PushKey(DIK_W);
+		isMovingBackward = input->PushKey(DIK_S);
+
+		if (isMovingForward && !isMovingBackward) {
+			fuel_ -= kFuelConsumption;
+			if (fuel_ <= 0.0f) {
+				fuel_ = 0.0f;
+			}
+
 			worldTransform_.translation_.x += velocity_.x;
 			worldTransform_.translation_.z += velocity_.z;
 
@@ -47,16 +75,31 @@ void Player::Update() {
 			if (input->PushKey(DIK_D)) {
 				worldTransform_.rotation_.y += kTurnSpeed;
 			}
-		}
+		} else if (isMovingBackward && !isMovingForward) {
+			fuel_ -= kFuelConsumption;
+			if (fuel_ <= 0.0f) {
+				fuel_ = 0.0f;
+			}
 
-		velocity_.x = std::sin(worldTransform_.rotation_.y) * kForwardSpeed;
-		velocity_.z = std::cos(worldTransform_.rotation_.y) * kForwardSpeed;
+			worldTransform_.translation_.x -= velocity_.x;
+			worldTransform_.translation_.z -= velocity_.z;
+
+			if (input->PushKey(DIK_A)) {
+				worldTransform_.rotation_.y += kTurnSpeed;
+			}
+			if (input->PushKey(DIK_D)) {
+				worldTransform_.rotation_.y -= kTurnSpeed;
+			}
+		}
+		velocity_.x = std::sin(worldTransform_.rotation_.y) * currentForwardSpeed_;
+		velocity_.z = std::cos(worldTransform_.rotation_.y) * currentForwardSpeed_;
 
 		worldTransform_.translation_.y = 1.0f;
 
-		worldTransform_.translation_.x = (std::clamp)(worldTransform_.translation_.x, 1.0f, 17.0f);
+		worldTransform_.translation_.x = (std::clamp)(worldTransform_.translation_.x, 1.0f, 78.0f);
 
-		worldTransform_.translation_.z = (std::clamp)(worldTransform_.translation_.z, 1.0f, 20.0f);
+		worldTransform_.translation_.z = (std::clamp)(worldTransform_.translation_.z, 1.0f, 78.0f);
+
 	} else {
 		velocity_ = {0.0f, 0.0f, 0.0f};
 	}
@@ -65,6 +108,7 @@ void Player::Update() {
 	worldTransform_.TransferMatrix();
 }
 
+//描画処理
 void Player::Draw() {
 	if (!isDead_) {
 		if (model_ && camera_) {
@@ -87,11 +131,15 @@ AABB Player::GetAABB() {
 	aabb.max.z = worldTransform_.translation_.z + kRadius;
 	return aabb;
 }
+
+//燃料回復
 void Player::RestoreFuel(float amount) {
 	fuel_ += amount;
 	if (fuel_ > kMaxFuel) {
-		fuel_ = kMaxFuel; // 最大値を超えないように制限
+		fuel_ = kMaxFuel; // 最大値は超えない
 	}
 }
 
 void Player::OnCollision(const Enemy* enemy) { (void)enemy; }
+
+void Player::OnCollisionWithBlock() { worldTransform_.translation_ = prevPosition_; }

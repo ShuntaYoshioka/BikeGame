@@ -91,7 +91,8 @@ AABB PlayerAttack::GetAABB() {
 
 	KamataEngine::Vector3 p = GetWorldPosition();
 	AABB aabb;
-	aabb.min = {p.x - kSize / 2.0f, p.y - kSize / 2.0f, p.z - kSize / 2.0f};
-	aabb.max = {p.x + kSize / 2.0f, p.y + kSize / 2.0f, p.z + kSize / 2.0f};
+	float halfSize = kExplosionSize / 2.0f;
+	aabb.min = {p.x - halfSize, p.y - halfSize, p.z - halfSize};
+	aabb.max = {p.x + halfSize, p.y + halfSize, p.z + halfSize};
 	return aabb;
 }

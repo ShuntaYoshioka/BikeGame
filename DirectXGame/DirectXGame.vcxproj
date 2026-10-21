@@ -111,7 +111,6 @@
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="Fade.cpp" />
     <ClCompile Include="GameScene.cpp" />
-    <ClCompile Include="Goal.cpp" />
     <ClCompile Include="GraphBar.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MapChipField.cpp" />
@@ -204,7 +203,6 @@
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="Fade.h" />
     <ClInclude Include="GameScene.h" />
-    <ClInclude Include="Goal.h" />
     <ClInclude Include="GraphBar.h" />
     <ClInclude Include="MapChipField.h" />
     <ClInclude Include="MenuScene.h" />

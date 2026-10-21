@@ -3,7 +3,7 @@
 class Fade {
 
 public:
-	// 1,フェード　2,横から流れてくる 3.煙
+	// 1,フェード　2,横から流れてくる 3.アイリスアウト 4.煙
 	enum class Type {
 		kFade,
 		kStripe,

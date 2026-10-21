@@ -83,13 +83,13 @@ void ChangeScene() {
 	case Scene::kTitle:
 		if (titleScene->isFinished()) {
 			// scene変化
-			scene = Scene::kMenu;
+			scene = Scene::kGame;
 			// 旧scene開放
 			delete titleScene;
 			titleScene = nullptr;
 			// 新scene生成と初期化
-			menuScene = new MenuScene;
-			menuScene->Initialize();
+			gameScene = new GameScene;
+			gameScene->Initialize();
 		}
 		break;
 

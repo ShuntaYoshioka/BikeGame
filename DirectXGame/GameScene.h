@@ -2,15 +2,14 @@
 #include "CameraController.h"
 #include "Enemy.h"
 #include "Fade.h"
-#include "Goal.h"
+#include "GraphBar.h"
 #include "KamataEngine.h"
 #include "MapChipField.h"
+#include "Particle.h"
 #include "Player.h"
+#include "PlayerAttack.h"
 #include "Skydome.h"
 #include "TitleScene.h"
-#include "PlayerAttack.h"
-#include "Particle.h"
-#include "GraphBar.h"
 #include <vector>
 
 class GameScene {
@@ -20,8 +19,6 @@ private:
 	uint32_t textureHandle_ = 0;
 
 	bool finished_ = false;
-
-	Goal goal_;
 
 public:
 	enum class Phase {
@@ -52,11 +49,13 @@ public:
 
 	KamataEngine::Model* modelEnemy_ = nullptr;
 
-	KamataEngine::Model* modelGoal_ = nullptr;
+	KamataEngine::Model* modelLord_ = nullptr;
 
 	KamataEngine::Model* modelAttack_ = nullptr;
 
 	KamataEngine::Model* modelParticle_ = nullptr;
+
+	KamataEngine::Model* modelGosign_ = nullptr;
 
 	uint32_t textureHandleGraph_ = 0;
 
@@ -71,14 +70,14 @@ public:
 
 	PlayerAttack* playerAttack_ = nullptr;
 
-	//敵
-	std::vector<Enemy*> enemies_;
-	
+	// 敵
+	std::vector<std::unique_ptr<Enemy>> enemies_;
+
 	// sky
 	Skydome* skydome_ = nullptr;
 
 	// パーティクル
-	Particle* particle_ = nullptr; 
+	Particle* particle_ = nullptr;
 
 	// カメラコントローラ
 	CameraController* cameraController_ = nullptr;
@@ -88,6 +87,8 @@ public:
 
 	GraphBar* graphBar_ = nullptr;
 
+	KamataEngine::WorldTransform worldTransformGoSign_;
+	KamataEngine::Vector3 gosignPositionm_;
 	// デバッグカメラ有効
 	bool isDebugCameraActive_ = false;
 
@@ -96,25 +97,38 @@ public:
 
 	std::vector<std::vector<KamataEngine::WorldTransform*>> worldTransformBlocks_;
 
+
+	std::vector<std::vector<WorldTransform*>> worldTransformLayer0_;
+	std::vector<std::vector<WorldTransform*>> worldTransformLayer1_;
+
 	void GenerateBlocks();
 
 	void CheckAllCollisions();
 
 	void ChangePhase();
 
-	float enemySpawnTimer_ = 0.0f;
-	static inline const float kSpawnInterval = 2.0f;//出現感覚
-
 	// ゲームプレイから開始
 	Phase phase_;
 
+	// セーフゾーンに居てゲームが止まってるか
+
 	bool isFinished() const { return finished_; }
 
+private:
 	bool isclear_ = false;
 
-	 bool isAllKill_ = false;
+	bool isAllKill_ = false;
 
 	Fade* fade_ = nullptr;
 
 	bool wasExploding = false;
+
+	bool hasLeftSafeZone_ = false;
+
+	// 敵
+	float enemySpawnTimer_ = 0.0f; // スポーン用タイマー
+	const float kEnemySpawnInterval = 3.0f;
+	int enemyArmyHp_ = 10; // 総合HP　用は撃破数
+
+	GraphBar* enemyHpBar_ = nullptr;
 };

@@ -16,7 +16,7 @@ public:
 	// 描画
 	void Draw();
 
-	//ゲッター セッター
+	// ゲッター セッター
 	const KamataEngine::WorldTransform& GetWorldTransform() const { return worldTransform_; }
 	KamataEngine::Vector3 GetWorldPosition() const { return worldTransform_.translation_; }
 
@@ -38,10 +38,12 @@ public:
 
 	AABB GetAABB();
 
-void RestoreFuel(float amount);
+	void RestoreFuel(float amount);
 
 	void SetMapChipField(MapChipField* mapChipField) { mapChipField_ = mapChipField; }
 	void OnCollision(const Enemy* enemy);
+
+	void OnCollisionWithBlock();
 
 private:
 	// ワールド変換データ & モデル & カメラ
@@ -50,16 +52,27 @@ private:
 	KamataEngine::Camera* camera_ = nullptr;
 	MapChipField* mapChipField_ = nullptr;
 	// 物理計算パラメータ
-	KamataEngine::Vector3 velocity_ = { 0.0f, 0.0f, 0.0f };
-	
-static inline const float kForwardSpeed = 0.08f; // 前進スピード
-	static inline const float kTurnSpeed = 0.15f;   // 左右の回転スピード
-	static inline const float kRadius = 0.5f;       // 当たり判定の半径
+	KamataEngine::Vector3 velocity_ = {0.0f, 0.0f, 0.0f};
 
-	//突進
+	static inline const float kForwardSpeed = 0.08f; // 前進スピード
+	static inline const float kTurnSpeed = 0.15f;    // 左右の回転スピード
+	static inline const float kRadius = 0.5f;        // 当たり判定の半径
+
+	// 突進
 	static inline const float kMaxFuel = 100.0f;
-	static inline const float kFuelConsumption = 0.1f; 
+	static inline const float kFuelConsumption = 0.1f;
+
+	bool isMovingForward ;
+	bool isMovingBackward;
+
 	float fuel_ = kMaxFuel;
 
 	bool isDead_ = false;
+
+	static inline const float kRoadSpeed = 0.14f;
+
+	float currentForwardSpeed_ = kForwardSpeed;
+
+	//座標保存用
+	KamataEngine::Vector3 prevPosition_;
 };
