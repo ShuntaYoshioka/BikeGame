@@ -160,18 +160,52 @@ void GameScene::CheckAllCollisions() {
 		}
 	}
 
+	if (player_ && !player_->IsDead()) {
+		AABB playerAABB = player_->GetAABB();
+
+		for (auto& enemy : enemies_) {
+			if (enemy->isDead()) {
+				continue;
+			}
+
+			AABB enemyAABB = enemy->GetAABB();
+
+			// AABBの交差判定
+			bool isCollision =
+			    (playerAABB.min.x <= enemyAABB.max.x && playerAABB.max.x >= enemyAABB.min.x && playerAABB.min.y <= enemyAABB.max.y && playerAABB.max.y >= enemyAABB.min.y &&
+			     playerAABB.min.z <= enemyAABB.max.z && playerAABB.max.z >= enemyAABB.min.z);
+
+			if (isCollision) {
+				// プレイヤーを死亡状態にする
+				player_->OnCollisionWithEnemy(enemy.get());
+
+				// シーンのフェーズを死亡演出（kDeath）へ移行
+				phase_ = Phase::kDeath;
+				deathTimer_ = 0.0f;
+
+				// カメラシェイク開始
+				if (cameraController_) {
+					cameraController_->StartShake(0.8f, 0.5f);
+				}
+
+				break; // 1回当たったらループを抜ける
+			}
+		}
+	}
+
+	// 3. プレイヤーの攻撃と敵の当たり判定
 	for (auto& enemy : enemies_) {
 		if (enemy->isDead()) {
 			continue;
 		}
 
-		// プレイヤーの攻撃との当たり判定チェック
-		if (playerAttack_ && playerAttack_->IsActive() && !playerAttack_->IsExploding()) {
+		if (playerAttack_ && playerAttack_->IsActive() && playerAttack_->IsExploding()) {
 			AABB enemyAABB = enemy->GetAABB();
 			AABB attackAABB = playerAttack_->GetAABB();
 
 			// AABBの交差判定
-			if (enemyAABB.min.x <= attackAABB.max.x && enemyAABB.max.x >= attackAABB.min.x && enemyAABB.min.y <= attackAABB.max.y && enemyAABB.max.y >= attackAABB.min.y &&
+			if (enemyAABB.min.x <= attackAABB.max.x && enemyAABB.max.x >= attackAABB.min.x && 
+				enemyAABB.min.y <= attackAABB.max.y && enemyAABB.max.y >= attackAABB.min.y &&
 			    enemyAABB.min.z <= attackAABB.max.z && enemyAABB.max.z >= attackAABB.min.z) {
 
 				// 敵を倒す
@@ -184,7 +218,6 @@ void GameScene::CheckAllCollisions() {
 	}
 	// 倒された敵を除外
 	enemies_.erase(std::remove_if(enemies_.begin(), enemies_.end(), [](const std::unique_ptr<Enemy>& enemy) { return enemy->isDead(); }), enemies_.end());
-
 #pragma endregion
 }
 
@@ -194,9 +227,6 @@ void GameScene::ChangePhase() {
 
 		break;
 	case Phase::kDeath:
-
-		phase_ = Phase::kFadeOut;
-		fade_->Start(Fade::Status::FadeOut, 1.0f);
 
 		break;
 
@@ -225,7 +255,7 @@ void GameScene::Update() {
 		MapChipField::IndexSet indexSet = mapChipField_->GetMapChipIndexSetByPosition(player_->GetWorldPosition());
 
 		//スタートかの判定
-		bool isInStartRoom = (indexSet.xIndex >= 16 && indexSet.xIndex < 26 && indexSet.yIndex >= 12 && indexSet.yIndex < 18);
+		isInStartRoom = (indexSet.xIndex >= 16 && indexSet.xIndex < 26 && indexSet.yIndex >= 12 && indexSet.yIndex < 18);
 
 		if (!isInStartRoom) {
 			for (auto& enemy : enemies_) {
@@ -252,6 +282,26 @@ void GameScene::Update() {
 		break;
 	}
 	case Phase::kDeath:
+		deathTimer_ += 1.0f / 60.0f;
+
+		if (deathTimer_ >= 0.4f && !hasSpawnedExplosion_) {
+			if (particle_) {
+				delete particle_;
+				particle_ = nullptr;
+			}
+			particle_ = new Particle();
+			particle_->Initialize(modelParticle_, &camera_, player_->GetWorldPosition());
+
+			player_->SetIsVisible(false);
+
+			hasSpawnedExplosion_ = true;
+		
+		}
+
+		if (deathTimer_ >= 1.2f) {
+			fade_->Start(Fade::Status::FadeOut, 1.0f);
+			phase_ = Phase::kFadeOut;
+		}
 		break;
 	case Phase::kFadeIn:
 
@@ -275,8 +325,6 @@ void GameScene::Update() {
 
 	if (KamataEngine::Input::GetInstance()->PushKey(DIK_SPACE)) {
 		playerAttack_->StartAttack();
-
-		finished_= true;
 	}
 
 	wasExploding = playerAttack_->IsExploding();

@@ -49,7 +49,7 @@ void PlayerAttack::Update() {
 	if (!isActive_)
 		return;
 
-	timer_ += 1.0f / 60.0f;
+	timer_ += 1.0f / 40.0f;
 	if (!isExploding_) {
 		if (timer_ >= kFuseTime) {
 			// 時間経過で爆発状態に移行

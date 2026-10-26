@@ -32,8 +32,8 @@ void CameraController::Update() {
 		t = std::clamp(introTimer_ / 2.0f, 0.0f, 1.0f);
 		easeT = 1.0f - (1.0f - t) * (1.0f - t);
 
-		Vector3 lowStartEye = {targetPos.x, 3.0f, targetPos.z - 8.0f};
-		Vector3 normalEye = {targetPos.x, 12.0f, targetPos.z - 7.0f};
+		lowStartEye = {targetPos.x, 3.0f, targetPos.z - 8.0f};
+		normalEye = {targetPos.x, 12.0f, targetPos.z - 7.0f};
 
 		camera_.translation_.x = std::lerp(lowStartEye.x, normalEye.x, easeT);
 		camera_.translation_.y = std::lerp(lowStartEye.y, normalEye.y, easeT);
@@ -58,5 +58,19 @@ void CameraController::Update() {
 		camera_.rotation_.z = 0.0f;
 	}
 
+	// 3. カメラの揺れ処理
+	if (shakeTimer_ > 0.0f) {
+		shakeTimer_ -= 1.0f / 14.0f;
+		shakeOffsetX = ((std::rand() % 200) / 100.0f - 1.0f) * shakeIntensity_;
+		shakeOffsetY = ((std::rand() % 200) / 100.0f - 1.0f) * shakeIntensity_;
+		camera_.translation_.x += shakeOffsetX;
+		camera_.translation_.y += shakeOffsetY;
+	}
+
 	camera_.UpdateMatrix();
+}
+
+void CameraController::StartShake(float duration, float intensity) {
+	shakeTimer_ = duration;
+	shakeIntensity_ = intensity;
 }

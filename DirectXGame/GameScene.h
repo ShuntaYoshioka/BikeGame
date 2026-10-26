@@ -119,6 +119,9 @@ private:
 
 	bool isAllKill_ = false;
 
+	// ゲーム開始時にセーフゾーンにいるかどうか
+	bool isInStartRoom;
+
 	Fade* fade_ = nullptr;
 
 	bool wasExploding = false;
@@ -128,7 +131,10 @@ private:
 	// 敵
 	float enemySpawnTimer_ = 0.0f; // スポーン用タイマー
 	const float kEnemySpawnInterval = 3.0f;
-	int enemyArmyHp_ = 10; // 総合HP　用は撃破数
+	int enemyArmyHp_ = 10; // 総合HP　撃破数
 
 	GraphBar* enemyHpBar_ = nullptr;
+	// デス時のタイマー
+	float deathTimer_ = 0.0f;
+	bool hasSpawnedExplosion_ = false;
 };

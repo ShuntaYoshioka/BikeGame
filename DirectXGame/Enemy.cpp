@@ -116,6 +116,4 @@ void Enemy::Draw() {
 	}
 }
 
-void Enemy::OnCollisionWithExplosion() {
-
-}
+void Enemy::OnCollisionWithExplosion() { isDead_ = true; }

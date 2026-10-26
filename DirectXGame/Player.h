@@ -41,9 +41,12 @@ public:
 	void RestoreFuel(float amount);
 
 	void SetMapChipField(MapChipField* mapChipField) { mapChipField_ = mapChipField; }
-	void OnCollision(const Enemy* enemy);
+
+	void SetIsVisible(bool isVisible) { isVisible_ = isVisible; }
+	bool IsVisible() const { return isVisible_; }
 
 	void OnCollisionWithBlock();
+	void OnCollisionWithEnemy(const Enemy* enemy);
 
 private:
 	// ワールド変換データ & モデル & カメラ
@@ -54,8 +57,8 @@ private:
 	// 物理計算パラメータ
 	KamataEngine::Vector3 velocity_ = {0.0f, 0.0f, 0.0f};
 
-	static inline const float kForwardSpeed = 0.08f; // 前進スピード
-	static inline const float kTurnSpeed = 0.15f;    // 左右の回転スピード
+	static inline const float kForwardSpeed = 0.06f; // 前進スピード
+	static inline const float kTurnSpeed = 0.1f;    // 左右の回転スピード
 	static inline const float kRadius = 0.5f;        // 当たり判定の半径
 
 	// 突進
@@ -72,6 +75,9 @@ private:
 	static inline const float kRoadSpeed = 0.14f;
 
 	float currentForwardSpeed_ = kForwardSpeed;
+
+	//揺れてるときは描画する用
+	bool isVisible_ = true;
 
 	//座標保存用
 	KamataEngine::Vector3 prevPosition_;

@@ -53,7 +53,7 @@ void Player::Update() {
 		}
 	}
 
-	//前後同時押しを考慮した移動処理
+	// 前後同時押しを考慮した移動処理
 	if (fuel_ > 0.0f) {
 		Input* input = Input::GetInstance();
 
@@ -108,13 +108,11 @@ void Player::Update() {
 	worldTransform_.TransferMatrix();
 }
 
-//描画処理
+// 描画処理
 void Player::Draw() {
-	if (!isDead_) {
-		if (model_ && camera_) {
+	if (isVisible_ && model_ && camera_) {
 			model_->Draw(worldTransform_, *camera_);
 		}
-	}
 }
 
 KamataEngine::Vector3 Player::GetWorldPosition() { return worldTransform_.translation_; }
@@ -132,7 +130,7 @@ AABB Player::GetAABB() {
 	return aabb;
 }
 
-//燃料回復
+// 燃料回復
 void Player::RestoreFuel(float amount) {
 	fuel_ += amount;
 	if (fuel_ > kMaxFuel) {
@@ -140,6 +138,15 @@ void Player::RestoreFuel(float amount) {
 	}
 }
 
-void Player::OnCollision(const Enemy* enemy) { (void)enemy; }
-
 void Player::OnCollisionWithBlock() { worldTransform_.translation_ = prevPosition_; }
+
+void Player::OnCollisionWithEnemy(const Enemy* enemy) {
+	if (isDead_) {
+		return;
+	}
+	(void)enemy;
+
+	isDead_ = true;
+	// 止める
+	velocity_ = {0.0f, 0.0f, 0.0f};
+}
