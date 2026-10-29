@@ -10,6 +10,8 @@ namespace {
 std::map<std::string, MapChipType> mapChipTable = {
     {"0", MapChipType::kBlank},
     {"1", MapChipType::kBlock},
+    {"2", MapChipType::kFuel },
+    {"3", MapChipType::klord }
 };
 }
 
@@ -34,7 +36,7 @@ void MapChipField::LoadMapchipCsv(const std::string& filePath, uint32_t layer) {
 	mapChipCsv << file.rdbuf();
 	file.close();
 
-	// 固定サイズ（22行 x 19列）でレイヤー指定読み込み
+	// 固定サイズでレイヤー指定読み込み
 	for (uint32_t i = 0; i < kNumBlockVirtical; ++i) {
 		std::string line;
 		if (!std::getline(mapChipCsv, line))
@@ -72,13 +74,12 @@ KamataEngine::Vector3 MapChipField::GetMapChipPositionByIndex(uint32_t xIndex, u
 	return {x, y, z};
 }
 
-MapChipField::IndexSet MapChipField::GetMapChipIndexSetByPosition(const Vector3& position) { 
+MapChipField::IndexSet MapChipField::GetMapChipIndexSetByPosition(const Vector3& position) {
 	IndexSet indexSet = {};
 	indexSet.xIndex = static_cast<uint32_t>((position.x + kBlockWidth / 2) / kBlockWidth);
-	indexSet.yIndex = kNumBlockVirtical - 1 - static_cast<uint32_t>((position.y + kBlockHeight / 2) / kBlockHeight);
+	indexSet.yIndex = kNumBlockVirtical - 1 - static_cast<uint32_t>((position.z + kBlockHeight / 2) / kBlockHeight);
 	return indexSet;
 }
-
 MapChipField::Rect MapChipField::GetRectByIndex(uint32_t xIndex, uint32_t yIndex) { 
 	//指定ブロックの中心座標を取得する
 	Vector3 center = GetMapChipPositionByIndex(xIndex,yIndex);

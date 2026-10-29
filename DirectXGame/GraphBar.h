@@ -9,6 +9,7 @@ public:
 
 	// 初期化
 	void Initialize(uint32_t textureHandle);
+	void Initialize(uint32_t textureHandle, KamataEngine::Vector2 pos); // 敵HP用
 
 	// 更新
 	void Update( float currentFuel, float maxFuel);

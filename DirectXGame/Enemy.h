@@ -28,17 +28,17 @@ public:
 	KamataEngine::Vector3 GetWorldPosition();
 
 	// 爆発攻撃に当たった時の処理
-	void OnCollisionWithExplosion() { isDead_ = true; }
+	void OnCollisionWithExplosion();
 
-	// 衝突応答（従来のもの）
+	// 衝突応答
 	void OnCollision(const Player* player);
-	void OnCollision(const PlayerAttack* playerAttack);
 
 	// デスフラグ確認
 	bool isDead() const { return isDead_; }
 
 	//スポーン
 	static KamataEngine::Vector3 spawnPosition(const KamataEngine::Vector3& playerPos);
+	float angle;
 
 	// 歩行スピード
 	static inline const float kWalkSpeed = 0.03f;

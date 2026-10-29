@@ -3,10 +3,11 @@
 class Fade {
 
 public:
-	// 1,フェード　2,横から流れてくる 3.煙
+	// 1,フェード　2,横から流れてくる 3.アイリスアウト 4.煙
 	enum class Type {
 		kFade,
 		kStripe,
+		kIrisOut,
 		kSmoke
 	};
 
@@ -67,4 +68,7 @@ private:
 		float t = 1.0f - x;
 		return 1.0f - (t * t * t);
 	}
+
+
+	std::array<KamataEngine::Sprite*, 4> irisSprites_;
 };

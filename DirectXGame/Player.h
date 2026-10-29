@@ -16,50 +16,68 @@ public:
 	// 描画
 	void Draw();
 
-	//ゲッター セッター
+	// ゲッター セッター
 	const KamataEngine::WorldTransform& GetWorldTransform() const { return worldTransform_; }
 	KamataEngine::Vector3 GetWorldPosition() const { return worldTransform_.translation_; }
 
-	float GetMaxFuel() const { return kMaxFuel; }
-
 	const KamataEngine::Vector3& GetVelocity() const { return velocity_; }
-	void SetVelocity(const KamataEngine::Vector3& velocity) { velocity_ = velocity; }
-
 	float GetRadius() const { return kRadius; }
 
 	bool IsDead() const { return isDead_; }
-	void SetIsDead(bool isDead) { isDead_ = isDead; }
+	bool IsVisible() const { return isVisible_; }
 
-	KamataEngine::Vector3 GetWorldPosition();
-
+	float GetMaxFuel() const { return kMaxFuel; }
 	float GetFuel() const { return fuel_; }
+
 	bool IsOutOfFuel() const { return fuel_ <= 0.0f; }
 	void AddFuel(float amount) { fuel_ = (std::min)(fuel_ + amount, kMaxFuel); }
 
 	AABB GetAABB();
 
-void RestoreFuel(float amount);
+	void RestoreFuel(float amount);
 
 	void SetMapChipField(MapChipField* mapChipField) { mapChipField_ = mapChipField; }
-	void OnCollision(const Enemy* enemy);
+
+	void SetVelocity(const KamataEngine::Vector3& velocity) { velocity_ = velocity; }
+	void SetIsDead(bool isDead) { isDead_ = isDead; }
+	void SetIsVisible(bool isVisible) { isVisible_ = isVisible; }
+
+	void OnCollisionWithBlock();
+	void OnCollisionWithEnemy(const Enemy* enemy);
 
 private:
 	// ワールド変換データ & モデル & カメラ
 	KamataEngine::WorldTransform worldTransform_;
+
 	KamataEngine::Model* model_ = nullptr;
 	KamataEngine::Camera* camera_ = nullptr;
 	MapChipField* mapChipField_ = nullptr;
-	// 物理計算パラメータ
-	KamataEngine::Vector3 velocity_ = { 0.0f, 0.0f, 0.0f };
-	
-static inline const float kForwardSpeed = 0.08f; // 前進スピード
-	static inline const float kTurnSpeed = 0.15f;   // 左右の回転スピード
-	static inline const float kRadius = 0.5f;       // 当たり判定の半径
 
-	//突進
+	// 物理計算パラメータ
+	KamataEngine::Vector3 velocity_ = {0.0f, 0.0f, 0.0f};
+
+	static inline const float kForwardSpeed = 0.06f; // 前進スピード
+	static inline const float kTurnSpeed = 0.1f;    // 左右の回転スピード
+	static inline const float kRadius = 0.5f;        // 当たり判定の半径
+
+	// 突進
 	static inline const float kMaxFuel = 100.0f;
-	static inline const float kFuelConsumption = 0.1f; 
+	static inline const float kFuelConsumption = 0.1f;
+
+	bool isMovingForward ;
+	bool isMovingBackward;
+
 	float fuel_ = kMaxFuel;
 
 	bool isDead_ = false;
+
+	static inline const float kRoadSpeed = 0.14f;
+
+	float currentForwardSpeed_ = kForwardSpeed;
+
+	//揺れてるときは描画する用
+	bool isVisible_ = true;
+
+	//座標保存用
+	KamataEngine::Vector3 prevPosition_;
 };

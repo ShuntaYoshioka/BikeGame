@@ -27,7 +27,7 @@ void MenuScene::Update() {
 
 		if (Input::GetInstance()->PushKey(DIK_SPACE)) {
 			phase_ = Phase::kFadeOut;
-			fade_->Start(Fade::Status::FadeOut, 2.0f, Fade::Type::kStripe);
+		fade_->Start(Fade::Status::FadeOut, 2.0f, Fade::Type::kStripe);
 		}
 		break;
 	case Phase::kFadeIn:

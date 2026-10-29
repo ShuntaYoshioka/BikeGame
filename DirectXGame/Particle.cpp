@@ -2,6 +2,7 @@
 #include "MyMath.h"
 #include <algorithm>
 #include <cstdlib>
+#include <cmath>
 
 using namespace KamataEngine;
 
@@ -11,33 +12,74 @@ static float GetRandomFloat(float minVal, float maxVal) {
 	return minVal + rate * (maxVal - minVal);
 }
 
-void Particle::Initialize(Model* model, Camera* camera, const Vector3& position) {
+void Particle::Initialize(Model* model, Camera* camera, const Vector3& position, ParticleType type) {
 	model_ = model;
 	camera_ = camera;
 	counter_ = 0.0f;
 	isFinished_ = false;
+	type_ = type;
 
 	for (uint32_t i = 0; i < kNumParticles; ++i) {
 		worldTransforms_[i].Initialize();
-		worldTransforms_[i].translation_ = position;
 
-		// 1. 乱数で散らばる方向と速度を決定 (X, Zは全方向、Yは少し上向きに跳ね上がる)
-		velocities_[i] = {
-		    GetRandomFloat(-0.2f, 0.2f), // X方向の広がり
-		    GetRandomFloat(0.05f, 0.3f),  // Y方向 (上への跳ね上がり)
-		    GetRandomFloat(-0.2f, 0.2f)  // Z方向の広がり
-		};
+		//飛び散る爆発
+		if (type == ParticleType::kExplosion) {
+			worldTransforms_[i].translation_ = position;
 
-		// 2. 乱数で回転速度を決定
-		rotSpeeds_[i] = {GetRandomFloat(-0.2f, 0.2f), GetRandomFloat(-0.2f, 0.2f), GetRandomFloat(-0.2f, 0.2f)};
+			velocities_[i] = {
+			    GetRandomFloat(-0.2f, 0.2f), 
+			    GetRandomFloat(0.05f, 0.1f), 
+			    GetRandomFloat(-0.2f, 0.2f) 
+			};
 
-		// 3. 乱数で初期サイズを決定
-		scale = GetRandomFloat(0.7f, 2.0f);
-		worldTransforms_[i].scale_ = {scale, scale, scale};
+			rotSpeeds_[i] = {GetRandomFloat(-0.2f, 0.2f), GetRandomFloat(-0.2f, 0.2f), GetRandomFloat(-0.2f, 0.2f)};
+			scale = GetRandomFloat(0.7f, 2.0f);
+			worldTransforms_[i].scale_ = {scale, scale, scale};
+
+		} else if (type == ParticleType::kSmoke) {
+			// 上昇する煙のパーティクル
+			worldTransforms_[i].translation_ = {
+				position.x + GetRandomFloat(-0.02f, 0.02f),
+				position.y + GetRandomFloat(0.0f, 0.05f),
+				position.z + GetRandomFloat(-0.02f, 0.02f)
+			};
+
+			startPositions_.resize(kNumParticles);
+			startPositions_[i] = worldTransforms_[i].translation_;
+
+			velocities_[i] = {0.0f,
+				GetRandomFloat(0.0f, 0.2f),
+				0.0f
+			};
+
+			float startAngle = GetRandomFloat(0.0f, 6.28f);
+			float rotSpeed = GetRandomFloat(0.06f, 0.15f);
+			float radius = GetRandomFloat(0.2f, 0.4f);
+
+			rotSpeeds_[i] = {startAngle, rotSpeed, radius};
+			float s = GetRandomFloat(0.5f, 1.5f);
+			worldTransforms_[i].scale_ = {s, s, s};
+		} else if (type == ParticleType::kExhaust) {
+			worldTransforms_[i].translation_ = position;
+			velocities_[i] = {
+				position.x + GetRandomFloat(-0.05f, 0.05f),
+				position.y + GetRandomFloat(-0.05f, 0.05f),
+				position.z + GetRandomFloat(-0.05f, 0.05f)
+			};
+			rotSpeeds_[i] = {0.0f, 0.0f, 0.0f};
+			float s = GetRandomFloat(0.3f, 0.7f);
+			worldTransforms_[i].scale_ = {s, s, s};
+		}
+
 	}
 
 	objectColor_.Initialize();
-	color_ = {1.0f, 1.0f, 1.0f, 1.0f};
+	if (type == ParticleType::kSmoke ) {
+		color_ = {0.1f, 0.1f, 0.1f, 1.0f};
+	} else {
+		color_ = {1.0f, 1.0f, 1.0f, 1.0f};
+	}
+	objectColor_.SetColor(color_);
 }
 
 void Particle::Update() {
@@ -51,13 +93,34 @@ void Particle::Update() {
 		worldTransforms_[i].translation_.y += velocities_[i].y;
 		worldTransforms_[i].translation_.z += velocities_[i].z;
 
-		// 回転処理（成分ごとに加算）
-		worldTransforms_[i].rotation_.x += rotSpeeds_[i].x;
-		worldTransforms_[i].rotation_.y += rotSpeeds_[i].y;
-		worldTransforms_[i].rotation_.z += rotSpeeds_[i].z;
-		// 重力演出（少しずつ下に引っ張る）
-		velocities_[i].y -= 0.01f;
+		if (type_ == ParticleType::kExplosion) {
+			// 爆発：設定した回転スピードでグニャグニャ回転させる
+			worldTransforms_[i].rotation_.x += rotSpeeds_[i].x;
+			worldTransforms_[i].rotation_.y += rotSpeeds_[i].y;
+			worldTransforms_[i].rotation_.z += rotSpeeds_[i].z;
 
+			velocities_[i].y -= 0.01f;
+			// 爆発は少しずつ小さくする（またはそのままでも）
+			float currentScale = worldTransforms_[i].scale_.x - 0.005f;
+			if (currentScale < 0.1f)
+				currentScale = 0.1f;
+			worldTransforms_[i].scale_ = {currentScale, currentScale, currentScale};
+
+		} else if (type_ == ParticleType::kSmoke) {
+			
+			rotSpeeds_[i].x += rotSpeeds_[i].y;
+
+			float radius = rotSpeeds_[i].z;
+			float cosValue = std::cos(rotSpeeds_[i].x) * radius ;
+			float sinValue = std::sin(rotSpeeds_[i].x) * radius;
+
+			worldTransforms_[i].translation_.x = startPositions_[i].x + cosValue ;
+			worldTransforms_[i].translation_.z = startPositions_[i].z + sinValue;
+
+			float currentScale = worldTransforms_[i].scale_.x + 0.012f;
+			worldTransforms_[i].scale_ = {currentScale, currentScale, currentScale};
+
+		}
 		// 行列転送
 		worldTransforms_[i].matWorld_ = MakeAffineMatrix(worldTransforms_[i].scale_, worldTransforms_[i].rotation_, worldTransforms_[i].translation_);
 		worldTransforms_[i].TransferMatrix();

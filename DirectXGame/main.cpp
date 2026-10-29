@@ -34,7 +34,7 @@ MenuScene* menuScene = nullptr;
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	// エンジンの初期化
-	KamataEngine::Initialize(L"バイク");
+	KamataEngine::Initialize(L"Bike Survivor");
 
 	// DirectXCommon*インスタンスの取得
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
@@ -83,13 +83,13 @@ void ChangeScene() {
 	case Scene::kTitle:
 		if (titleScene->isFinished()) {
 			// scene変化
-			scene = Scene::kMenu;
+			scene = Scene::kGame;
 			// 旧scene開放
 			delete titleScene;
 			titleScene = nullptr;
 			// 新scene生成と初期化
-			menuScene = new MenuScene;
-			menuScene->Initialize();
+			gameScene = new GameScene;
+			gameScene->Initialize();
 		}
 		break;
 
@@ -111,11 +111,17 @@ void ChangeScene() {
 		if (gameScene) {
 
 			if (gameScene->isFinished()) {
-				scene = Scene::kTitle;
-				delete gameScene;
-				gameScene = nullptr;
-				titleScene = new TitleScene;
-				titleScene->Initialize();
+				if (gameScene->IsRestartRequested()) {
+					delete gameScene;
+					gameScene = new GameScene;
+					gameScene->Initialize();
+				} else {
+					scene = Scene::kTitle;
+					delete gameScene;
+					gameScene = nullptr;
+					titleScene = new TitleScene;
+					titleScene->Initialize();
+				}
 			}
 		}
 		break;

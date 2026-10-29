@@ -49,7 +49,7 @@ void PlayerAttack::Update() {
 	if (!isActive_)
 		return;
 
-	timer_ += 1.0f / 60.0f;
+	timer_ += 1.0f / 40.0f;
 	if (!isExploding_) {
 		if (timer_ >= kFuseTime) {
 			// 時間経過で爆発状態に移行
@@ -91,7 +91,8 @@ AABB PlayerAttack::GetAABB() {
 
 	KamataEngine::Vector3 p = GetWorldPosition();
 	AABB aabb;
-	aabb.min = {p.x - kSize / 2.0f, p.y - kSize / 2.0f, p.z - kSize / 2.0f};
-	aabb.max = {p.x + kSize / 2.0f, p.y + kSize / 2.0f, p.z + kSize / 2.0f};
+	float halfSize = kExplosionSize / 2.0f;
+	aabb.min = {p.x - halfSize, p.y - halfSize, p.z - halfSize};
+	aabb.max = {p.x + halfSize, p.y + halfSize, p.z + halfSize};
 	return aabb;
 }

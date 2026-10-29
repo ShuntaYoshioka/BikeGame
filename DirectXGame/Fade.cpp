@@ -26,6 +26,11 @@ void Fade::Initialize() {
 	bikeSprite_ = Sprite::Create(bikeTextureHandle_, {0.0f, 0.0f});
 	bikeSprite_->SetSize(Vector2(128.0f, 64.0f));
 	bikeSprite_->SetColor(Vector4(0.2f, 0.2f, 0.2f, 1.0f));
+
+	for (int i = 0; i < 4; i++) {
+		irisSprites_[i] = Sprite::Create(textureHandle_, {0, 0});
+		irisSprites_[i]->SetColor(Vector4(0, 0, 0, 1)); // 黒色
+	}
 }
 
 void Fade::Update() {
@@ -60,11 +65,11 @@ void Fade::Update() {
 
 	case Status::FadeOut:
 		if (type_ == Type::kStripe) {
-			// 【ストライプ】画面外(左:-1280) から 画面内(0) へ滑り込む
+			//ストライプ
 			for (int i = 0; i < kStripeCount; ++i) {
 				float posY = static_cast<float>(i) * 720 / kStripeCount;
 
-				// 各段のディレイ（遅延）計算
+				// 各段のディレイ
 				float activeDuration = duration_ - stripes_[i].delay;
 				float progress = 0.0f;
 				if (activeDuration > 0.0f) {
@@ -75,14 +80,14 @@ void Fade::Update() {
 				stripes_[i].sprite->SetPosition(Vector2(posX, posY));
 			}
 		} else if (type_ == Type::kSmoke) {
-			// 【バイク＆煙】画面下部をバイクが走り抜け、煙で画面全体を黒く覆い尽くす
+			// バイクの位置を更新
 			float progress = std::clamp(counter_ / duration_, 0.0f, 1.0f);
 
-			// 1. バイクの移動（画面左外 -150 から 右外 1400 へ爆走）
+			// バイクの移動
 			bikePos_.x = -150.0f + (1550.0f * progress);
 			bikeSprite_->SetPosition(bikePos_);
 
-			// 2. バイク走行中（排気口の位置から煙を生成）
+			// バイク走行中
 			if (bikePos_.x > -100.0f && bikePos_.x < 1300.0f) {
 				for (int k = 0; k < 3; ++k) {
 					Smoke smoke;
@@ -103,7 +108,7 @@ void Fade::Update() {
 				}
 			}
 
-			// 3. 煙の拡大・更新（画面を埋める）
+			// 煙
 			for (auto& smoke : smokes_) {
 				if (smoke.scale < smoke.maxScale) {
 					smoke.scale += 0.15f;
@@ -115,10 +120,42 @@ void Fade::Update() {
 				smoke.sprite->SetPosition(KamataEngine::Vector2(smoke.position.x - size * 0.5f, smoke.position.y - size * 0.5f));
 			}
 
+		} else if (type_ == Type::kIrisOut) {
+			//アイリスアウト
+			float progress = std::clamp(counter_ / duration_, 0.0f, 1.0f);
+			float easeProg = EaseOutCubic(progress);
 
+			// 中央の空いている穴のサイズ
+			float holeW = 1280.0f * (1.0f - easeProg);
+			float holeH = 720.0f * (1.0f - easeProg);
+
+			// 中央の位置
+			float centerX =920.0f;
+			float centerY = 360.0f;
+
+			// 穴の位置
+			float holeX = centerX - holeW * 0.5f;
+			float holeY = centerY - holeH * 0.5f;
+
+
+			//上幕
+			irisSprites_[0]->SetPosition(Vector2(0, 0));
+			irisSprites_[0]->SetSize(Vector2(1280, holeY));
+
+			//下幕
+			irisSprites_[1]->SetPosition(Vector2(0, holeY + holeH));
+			irisSprites_[1]->SetSize(Vector2(1280, 720 - (holeY + holeH)));
+
+			// 左幕
+			irisSprites_[2]->SetPosition(Vector2(0, holeY));
+			irisSprites_[2]->SetSize(Vector2(holeX, holeH));
+
+			//右幕
+			irisSprites_[3]->SetPosition(Vector2(holeX + holeW, holeY));
+			irisSprites_[3]->SetSize(Vector2(1280 - (holeX + holeW), holeH));
 
 		} else {
-			// 【従来フェード】元のコードと同じ（徐々に黒くする）
+			//徐々に黒くするフェード
 			sprite_->SetColor(Vector4(0, 0, 0, std::clamp(counter_ / duration_, 0.0f, 1.0f)));
 		}
 		break;
@@ -140,9 +177,13 @@ void Fade::Draw() {
 			stripes_[i].sprite->Draw();
 		}
 	} else if (type_ == Type::kSmoke) {
-		//Bikeの描画をする
+		// Bikeの描画をする
 		for (auto& smoke : smokes_) {
 			smoke.sprite->Draw();
+		}
+	} else if (type_ == Type::kIrisOut) {
+		for (int i = 0; i < 4; i++) {
+			irisSprites_[i]->Draw();
 		}
 	} else if (type_ == Type::kFade) {
 		sprite_->Draw();
@@ -165,7 +206,9 @@ void Fade::Start(Status status, float duration, Type type) {
 	if (type_ == Type::kSmoke) {
 		bikePos_ = Vector2(-150.0f, 360.0f); // 画面サイズ720pxのうち、Y=600（下部）を走行
 	}
+
 	smokes_.clear();
+
 	if (type_ == Type::kStripe) {
 		float stripeHeight = 720.0f / static_cast<float>(kStripeCount);
 
@@ -182,6 +225,13 @@ void Fade::Start(Status status, float duration, Type type) {
 
 			stripes_[i].sprite->SetPosition(Vector2(posX, posY));
 		}
+	}
+
+	if (type_ == Type::kIrisOut) {
+		// 開始時は画面全体を覆うようにセット
+		sprite_->SetSize(Vector2(1280.0f, 720.0f));
+		sprite_->SetPosition(Vector2(0.0f, 0.0f));
+		sprite_->SetColor(Vector4(0, 0, 0, 1.0f));
 	}
 }
 

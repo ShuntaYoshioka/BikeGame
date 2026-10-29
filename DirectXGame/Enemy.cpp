@@ -12,7 +12,6 @@ void Enemy::Initialize(KamataEngine::Model* model, KamataEngine::Camera* camera,
 
 	worldTransform_.Initialize();
 	worldTransform_.translation_ = position;
-	// 以前決めた0.8倍サイズ（スケール0.8）にセット
 	worldTransform_.scale_ = {0.8f, 0.8f, 0.8f};
 	worldTransform_.rotation_.y = -std::numbers::pi_v<float> / 2.0f;
 }
@@ -22,14 +21,14 @@ void Enemy::Update() {
 		return;
 	}
 
-	// プレイヤーがセットされている場合、XZ平面でプレイヤーへ追従
+	//追従
 	if (player_) {
 		KamataEngine::Vector3 playerPos = player_->GetWorldPosition();
 
-		// プレイヤーへの方向ベクトル（XZ平面）
+		// プレイヤーへの方向ベクトル
 		KamataEngine::Vector3 diff;
 		diff.x = playerPos.x - worldTransform_.translation_.x;
-		diff.y = 0.0f; // Y軸方向は固定
+		diff.y = 0.0f; 
 		diff.z = playerPos.z - worldTransform_.translation_.z;
 
 		// 距離を計算
@@ -57,11 +56,6 @@ void Enemy::Update() {
 }
 
 void Enemy::OnCollision(const Player* player) { (void)player; }
-
-void Enemy::OnCollision(const PlayerAttack* playerAttack) {
-	(void)playerAttack;
-	isDead_ = true;
-}
 
 KamataEngine::Vector3 Enemy::GetWorldPosition() { return worldTransform_.translation_; }
 
@@ -107,17 +101,19 @@ Enemy* Enemy::Create(KamataEngine::Model* model, KamataEngine::Camera* camera, P
 }
 
 KamataEngine::Vector3 Enemy::spawnPosition(const KamataEngine::Vector3& playerPos) {
-	// ランダムな角度 (0 〜 2π)
-	float angle = static_cast<float>(rand()) / RAND_MAX * 3.14159265f * 2.0f;
-	// プレイヤーからの距離 (12〜18ユニット)
+	// ランダムな角度 
+	float angle = static_cast<float>(rand()) / RAND_MAX * 3.14f * 2.0f;
+	// プレイヤーからの距離12〜18で、スポーン
 	float distance = 12.0f + static_cast<float>(rand()) / RAND_MAX * 6.0f;
 
-	// スポーン座標を計算 (XZ平面)
+	// スポーン座標を計算
 	return {playerPos.x + std::cos(angle) * distance, 0.0f, playerPos.z + std::sin(angle) * distance};
 }
 
 void Enemy::Draw() {
-	if (!isDead_ && model_ && camera_) {
+	if (!isDead_ ) {
 		model_->Draw(worldTransform_, *camera_);
 	}
 }
+
+void Enemy::OnCollisionWithExplosion() { isDead_ = true; }
