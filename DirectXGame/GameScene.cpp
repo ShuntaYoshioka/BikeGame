@@ -1,6 +1,7 @@
 #include "GameScene.h"
 #include "CameraController.h"
 #include "MyMath.h"
+#include <algorithm>
 
 using namespace KamataEngine;
 
@@ -18,9 +19,21 @@ void GameScene::Initialize() {
 	modelLord_ = Model::CreateFromOBJ("goal", true);
 	modelAttack_ = Model::CreateFromOBJ("playerAttack", true);
 	modelParticle_ = Model::CreateFromOBJ("deathParticle", true);
-	modelGosign_ = Model::CreateFromOBJ("Go",true);
+	modelGosign_ = Model::CreateFromOBJ("Go", true);
 
 	textureHandleGraph_ = TextureManager::Load("white1x1.png");
+	textureHandleContinue_ = TextureManager::Load("./Resources./Continue/Continue.png");
+
+	flashSprite_ = std::unique_ptr<KamataEngine::Sprite>(KamataEngine::Sprite::Create(textureHandleGraph_, {0.0f, 0.0f}));
+	flashSprite_->SetSize({1280.0f, 720.0f});
+	flashSprite_->SetColor({1.0f, 1.0f, 1.0f, 0.0f});
+
+	continueSprite_ =std::unique_ptr<KamataEngine::Sprite>(KamataEngine::Sprite::Create(textureHandleContinue_, {0.0f, 0.0f}));
+
+	// 透明な黒の背景スプライトを作成
+	continueBackSprite_ = std::unique_ptr<KamataEngine::Sprite>(KamataEngine::Sprite::Create(textureHandleWhite_, {0.0f, 0.0f}));
+	continueBackSprite_->SetSize({1280.0f, 720.0f});
+	continueBackSprite_->SetColor({0.1f, 0.1f, 0.1f, 0.6f});
 
 	// マップチップフィールドの生成
 	mapChipField_ = new MapChipField;
@@ -31,7 +44,7 @@ void GameScene::Initialize() {
 	mapChipField_->LoadMapchipCsv("Resources/blocks2.csv", 1);
 
 	// 自キャラ生成
-	player_ = new Player();
+	player_ = std::make_unique<Player>();
 
 	// 自キャラ座標をマップチップ番号で指定
 	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(20, 16);
@@ -42,27 +55,27 @@ void GameScene::Initialize() {
 	// 自キャラの初期化
 	player_->Initialize(modelPlayer_, &camera_, playerPosition);
 
-	skydome_ = new Skydome();
+	skydome_ = std::make_unique<Skydome>();
 
 	player_->SetMapChipField(mapChipField_);
 
-	playerAttack_ = new PlayerAttack();
+	playerAttack_ = std::make_unique<PlayerAttack>();
 
-	playerAttack_->Initialize(modelAttack_, &camera_, player_);
+	playerAttack_->Initialize(modelAttack_, &camera_, player_.get());
 
 	// 敵
 	enemies_.clear();        // 前のシーンの敵が残っていればクリア
 	enemySpawnTimer_ = 0.0f; // タイマーリセット
 
 	// 燃料ゲージの生成
-	graphBar_ = new GraphBar();
+	graphBar_ = std::make_unique<GraphBar>();
 	graphBar_->Initialize(textureHandleGraph_);
 
 	// 敵HPゲージの生成
-	enemyHpBar_ = new GraphBar();
+	enemyHpBar_ = std::make_unique<GraphBar>();
 	enemyHpBar_->Initialize(textureHandleGraph_, {540.0f, 20.0f});
 
-	//Gosign
+	// Gosign
 	worldTransformGoSign_.Initialize();
 	gosignPositionm_ = playerPosition;
 	gosignPositionm_.y += 1.0f;
@@ -75,11 +88,11 @@ void GameScene::Initialize() {
 	// カメラの初期化
 	camera_.Initialize();
 
-	cameraController_ = new CameraController();
+	cameraController_ = std::make_unique<CameraController>();
 
 	cameraController_->Initialize();
 
-	cameraController_->SetTarget(player_);
+	cameraController_->SetTarget(player_.get());
 	cameraController_->SetMapChipField(mapChipField_);
 
 	// 他の初期化
@@ -90,7 +103,7 @@ void GameScene::Initialize() {
 	// カメラの生成
 	debugCamera_ = new DebugCamera(1280, 720);
 
-	fade_ = new Fade();
+	fade_ = std::make_unique<Fade>();
 	fade_->Initialize();
 
 	fade_->Start(Fade::Status::FadeIn, 1.0f);
@@ -204,8 +217,7 @@ void GameScene::CheckAllCollisions() {
 			AABB attackAABB = playerAttack_->GetAABB();
 
 			// AABBの交差判定
-			if (enemyAABB.min.x <= attackAABB.max.x && enemyAABB.max.x >= attackAABB.min.x && 
-				enemyAABB.min.y <= attackAABB.max.y && enemyAABB.max.y >= attackAABB.min.y &&
+			if (enemyAABB.min.x <= attackAABB.max.x && enemyAABB.max.x >= attackAABB.min.x && enemyAABB.min.y <= attackAABB.max.y && enemyAABB.max.y >= attackAABB.min.y &&
 			    enemyAABB.min.z <= attackAABB.max.z && enemyAABB.max.z >= attackAABB.min.z) {
 
 				// 敵を倒す
@@ -227,7 +239,13 @@ void GameScene::ChangePhase() {
 
 		break;
 	case Phase::kDeath:
+		if (deathTimer_ >= 2.8f) {
+			fade_->Start(Fade::Status::FadeOut, 1.0f);
+			phase_ = Phase::kContinue;
+		}
+		break;
 
+	case Phase::kContinue:
 		break;
 
 	case Phase::kFadeIn:
@@ -247,14 +265,20 @@ void GameScene::ChangePhase() {
 // 更新処理
 void GameScene::Update() {
 
-	fade_->Update();
+	if (phase_ != Phase::kContinue) {
+		fade_->Update();
+	}
 
 	switch (phase_) {
 	case Phase::kPlay: {
 
+		if (KamataEngine::Input::GetInstance()->PushKey(DIK_SPACE)) {
+			playerAttack_->StartAttack();
+		}
+
 		MapChipField::IndexSet indexSet = mapChipField_->GetMapChipIndexSetByPosition(player_->GetWorldPosition());
 
-		//スタートかの判定
+		// スタートかの判定
 		isInStartRoom = (indexSet.xIndex >= 16 && indexSet.xIndex < 26 && indexSet.yIndex >= 12 && indexSet.yIndex < 18);
 
 		if (!isInStartRoom) {
@@ -274,9 +298,29 @@ void GameScene::Update() {
 		if (enemySpawnTimer_ >= kEnemySpawnInterval) {
 			enemySpawnTimer_ = 0.0f;
 
-			auto newEnemy = std::unique_ptr<Enemy>(Enemy::Create(modelEnemy_, &camera_, player_, mapChipField_));
+			auto newEnemy = std::unique_ptr<Enemy>(Enemy::Create(modelEnemy_, &camera_, player_.get(), mapChipField_));
 			if (newEnemy) {
 				enemies_.push_back(std::move(newEnemy));
+			}
+		}
+
+		// コンティニュー演出用
+	 debugDeathTimer_ += 1.0f / 60.0f;
+		if (debugDeathTimer_ >= 1.1f) {
+			debugDeathTimer_ = 0.0f;
+
+			// プレイヤーの死亡処理（引数はnullptrでOK）
+			if (player_ && !player_->IsDead()) {
+				player_->OnCollisionWithEnemy(nullptr);
+			}
+
+			// シーンのフェーズを死亡演出（kDeath）へ移行
+			phase_ = Phase::kDeath;
+			deathTimer_ = 0.0f;
+
+			// カメラシェイク開始
+			if (cameraController_) {
+				cameraController_->StartShake(0.8f, 0.5f);
 			}
 		}
 		break;
@@ -284,21 +328,39 @@ void GameScene::Update() {
 	case Phase::kDeath:
 		deathTimer_ += 1.0f / 60.0f;
 
-		if (deathTimer_ >= 0.4f && !hasSpawnedExplosion_) {
-			if (particle_) {
-				delete particle_;
-				particle_ = nullptr;
-			}
-			particle_ = new Particle();
-			particle_->Initialize(modelParticle_, &camera_, player_->GetWorldPosition());
-
-			player_->SetIsVisible(false);
-
-			hasSpawnedExplosion_ = true;
-		
+		// フラッシュタイミング
+		if (deathTimer_ <= 1.0f / 60.0f) {
+			flashTimer_ = 0.2f;
 		}
 
-		if (deathTimer_ >= 1.2f) {
+		if (deathTimer_ >= 1.0f && !hasSpawnedExplosion_) {
+
+			auto explosion = std::make_unique<Particle>();
+			explosion->Initialize(modelParticle_, &camera_, player_->GetWorldPosition(), Particle::ParticleType::kExplosion);
+			particles_.push_back(std::move(explosion));
+
+			auto smoke = std::make_unique<Particle>();
+			smoke->Initialize(modelParticle_, &camera_, player_->GetWorldPosition(), Particle::ParticleType::kSmoke);
+			particles_.push_back(std::move(smoke));
+
+			player_->SetIsVisible(false);
+			hasSpawnedExplosion_ = true;
+		}
+		break;
+	case Phase::kContinue:
+
+		continueAlphaTimer_ += 1.0f / 60.0f;
+		if (continueAlphaTimer_ > 0.5f) {
+			continueAlphaTimer_ = 0.5f;
+		}
+		if (Input::GetInstance()->TriggerKey(DIK_1) || Input::GetInstance()->TriggerKey(DIK_NUMPAD1)) {
+			isRestartRequested_ = true;
+			fade_->Start(Fade::Status::FadeOut, 1.0f);
+			phase_ = Phase::kFadeOut;
+		}
+		// 2キーでタイトルへ
+		if (Input::GetInstance()->TriggerKey(DIK_2) || Input::GetInstance()->TriggerKey(DIK_NUMPAD2)) {
+			isRestartRequested_ = false;
 			fade_->Start(Fade::Status::FadeOut, 1.0f);
 			phase_ = Phase::kFadeOut;
 		}
@@ -322,11 +384,6 @@ void GameScene::Update() {
 
 	// Skyblock
 	skydome_->Update();
-
-	if (KamataEngine::Input::GetInstance()->PushKey(DIK_SPACE)) {
-		playerAttack_->StartAttack();
-	}
-
 	wasExploding = playerAttack_->IsExploding();
 
 	playerAttack_->Update();
@@ -335,26 +392,28 @@ void GameScene::Update() {
 	enemyHpBar_->Update(static_cast<float>(enemyArmyHp_), 10.0f);
 
 	if (!wasExploding && playerAttack_->IsExploding()) {
-		if (particle_) {
-			delete particle_;
-			particle_ = nullptr;
+		auto explosion = std::make_unique<Particle>();
+		explosion->Initialize(modelParticle_, &camera_, playerAttack_->GetWorldPosition(), Particle::ParticleType::kExplosion);
+		particles_.push_back(std::move(explosion));
+	}
+	for (auto& p : particles_) {
+		p->Update();
+	}
+
+	if (flashTimer_ > 0.0f) {
+		flashTimer_ -= 1.0f / 60.0f;
+		if (flashTimer_ < 0.0f) {
+			flashTimer_ = 0.0f;
 		}
-
-		particle_ = new Particle();
-		particle_->Initialize(modelParticle_, &camera_, playerAttack_->GetWorldPosition());
+		// 残り時間に応じて透明度を 1.0f から 0.0f へフェードアウトさせる
+		float alpha = flashTimer_ / 0.2f; // 0.2秒かけて消える
+		flashSprite_->SetColor({1.0f, 1.0f, 1.0f, alpha});
+	} else {
+		flashSprite_->SetColor({1.0f, 1.0f, 1.0f, 0.0f});
 	}
 
-	if (particle_) {
-		particle_->Update();
-
-		if (particle_->IsFinished()) {
-			delete particle_;
-			particle_ = nullptr;
-		}
-	}
-	if (particle_) {
-		particle_->Update();
-	}
+	// 終わったものを自動消去
+	particles_.erase(std::remove_if(particles_.begin(), particles_.end(), [](const std::unique_ptr<Particle>& p) { return p->IsFinished(); }), particles_.end());
 
 	// カメラコントロール
 	cameraController_->Update();
@@ -463,8 +522,8 @@ void GameScene::Draw() {
 		enemy->Draw();
 	}
 
-	if (particle_) {
-		particle_->Draw();
+	for (auto& p : particles_) {
+		p->Draw();
 	}
 
 	// アタック描画
@@ -491,23 +550,32 @@ void GameScene::Draw() {
 		enemyHpBar_->Draw();
 	}
 
+	if (flashTimer_ > 0.0f && flashSprite_) {
+		flashSprite_->Draw();
+	}
+
+if (phase_ == Phase::kContinue || phase_ == Phase::kFadeOut) {
+		float alpha = 1.0f;
+		if (phase_ == Phase::kContinue) {
+			alpha = std::clamp(continueAlphaTimer_ / 0.5f, 0.0f, 1.0f);
+		}
+
+		if (continueBackSprite_) {
+			continueBackSprite_->SetColor({0.1f, 0.1f, 0.1f, 0.6f * alpha});
+			continueBackSprite_->Draw();
+		}
+		if (continueSprite_) {
+			continueSprite_->SetColor({1.0f, 1.0f, 1.0f, alpha});
+			continueSprite_->Draw();
+		}
+	}
 	Sprite::PostDraw();
 
 	fade_->Draw();
 }
 
 GameScene::~GameScene() {
-	delete modelBlock_;
-	delete debugCamera_;
-	delete modelPlayer_;
-	delete modelEnemy_;
-	delete fade_;
-	delete modelSkydome_;
-	delete mapChipField_;
-	delete particle_;
-	delete modelParticle_;
-	delete graphBar_;
-	delete enemyHpBar_;
+	particles_.clear();
 	for (std::vector<WorldTransform*>& line : worldTransformLayer0_) {
 		for (WorldTransform* wt : line) {
 			delete wt;

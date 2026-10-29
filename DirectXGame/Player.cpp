@@ -115,8 +115,6 @@ void Player::Draw() {
 		}
 }
 
-KamataEngine::Vector3 Player::GetWorldPosition() { return worldTransform_.translation_; }
-
 AABB Player::GetAABB() {
 	AABB aabb;
 	// 球体の中心座標から、半径 kRadius 分の立方体AABBを作る

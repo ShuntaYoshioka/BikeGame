@@ -20,19 +20,15 @@ public:
 	const KamataEngine::WorldTransform& GetWorldTransform() const { return worldTransform_; }
 	KamataEngine::Vector3 GetWorldPosition() const { return worldTransform_.translation_; }
 
-	float GetMaxFuel() const { return kMaxFuel; }
-
 	const KamataEngine::Vector3& GetVelocity() const { return velocity_; }
-	void SetVelocity(const KamataEngine::Vector3& velocity) { velocity_ = velocity; }
-
 	float GetRadius() const { return kRadius; }
 
 	bool IsDead() const { return isDead_; }
-	void SetIsDead(bool isDead) { isDead_ = isDead; }
+	bool IsVisible() const { return isVisible_; }
 
-	KamataEngine::Vector3 GetWorldPosition();
-
+	float GetMaxFuel() const { return kMaxFuel; }
 	float GetFuel() const { return fuel_; }
+
 	bool IsOutOfFuel() const { return fuel_ <= 0.0f; }
 	void AddFuel(float amount) { fuel_ = (std::min)(fuel_ + amount, kMaxFuel); }
 
@@ -42,8 +38,9 @@ public:
 
 	void SetMapChipField(MapChipField* mapChipField) { mapChipField_ = mapChipField; }
 
+	void SetVelocity(const KamataEngine::Vector3& velocity) { velocity_ = velocity; }
+	void SetIsDead(bool isDead) { isDead_ = isDead; }
 	void SetIsVisible(bool isVisible) { isVisible_ = isVisible; }
-	bool IsVisible() const { return isVisible_; }
 
 	void OnCollisionWithBlock();
 	void OnCollisionWithEnemy(const Enemy* enemy);
@@ -51,9 +48,11 @@ public:
 private:
 	// ワールド変換データ & モデル & カメラ
 	KamataEngine::WorldTransform worldTransform_;
+
 	KamataEngine::Model* model_ = nullptr;
 	KamataEngine::Camera* camera_ = nullptr;
 	MapChipField* mapChipField_ = nullptr;
+
 	// 物理計算パラメータ
 	KamataEngine::Vector3 velocity_ = {0.0f, 0.0f, 0.0f};
 

@@ -14,10 +14,9 @@ public:
 	// 描画
 	void Draw();
 
-	KamataEngine::Camera* camera_ = nullptr;
-
 private:
 	KamataEngine::WorldTransform worldTransform_;
 	KamataEngine::Model* model_ = nullptr;
 
+		KamataEngine::Camera* camera_ = nullptr;
 };

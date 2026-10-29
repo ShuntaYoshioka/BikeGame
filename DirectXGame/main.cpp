@@ -111,11 +111,17 @@ void ChangeScene() {
 		if (gameScene) {
 
 			if (gameScene->isFinished()) {
-				scene = Scene::kTitle;
-				delete gameScene;
-				gameScene = nullptr;
-				titleScene = new TitleScene;
-				titleScene->Initialize();
+				if (gameScene->IsRestartRequested()) {
+					delete gameScene;
+					gameScene = new GameScene;
+					gameScene->Initialize();
+				} else {
+					scene = Scene::kTitle;
+					delete gameScene;
+					gameScene = nullptr;
+					titleScene = new TitleScene;
+					titleScene->Initialize();
+				}
 			}
 		}
 		break;

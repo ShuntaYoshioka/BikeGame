@@ -4,8 +4,15 @@
 
 class Particle {
 public:
+
+enum class ParticleType {
+		kExplosion,
+		kSmoke,
+		kExhaust,
+	};
+
 	// 初期化
-	void Initialize(KamataEngine::Model* model, KamataEngine::Camera* camera, const KamataEngine::Vector3& position);
+	void Initialize(KamataEngine::Model* model, KamataEngine::Camera* camera, const KamataEngine::Vector3& position, ParticleType type =ParticleType::kExplosion);
 
 	// 更新
 	void Update();
@@ -17,10 +24,12 @@ public:
 	bool IsFinished() const { return isFinished_; }
 
 private:
-	static inline const uint32_t kNumParticles = 9; // パーティクルの個数
-	static inline const float kDuration = 0.6f;     // 生存時間（秒）
+	static inline const uint32_t kNumParticles = 10; // パーティクルの個数
+	static inline const float kDuration = 2.0f;     // 生存時間（秒）
 
 	float scale;
+
+	ParticleType type_;
 
 	KamataEngine::Model* model_ = nullptr;
 	KamataEngine::Camera* camera_ = nullptr;
@@ -30,6 +39,8 @@ private:
 
 	KamataEngine::ObjectColor objectColor_;
 	KamataEngine::Vector4 color_ = {1.0f, 1.0f, 1.0f, 1.0f};
+
+	std::vector<KamataEngine::Vector3> startPositions_;
 
 	float counter_ = 0.0f;
 	bool isFinished_ = false;
