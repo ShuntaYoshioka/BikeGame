@@ -4,7 +4,7 @@
 enum class MapChipType { 
 	kBlank,
 	kBlock,
-	klord,
+	kRoad,
 	kFuel,
 };
 

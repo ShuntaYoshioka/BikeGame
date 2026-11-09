@@ -8,18 +8,18 @@ using namespace KamataEngine;
 void GameScene::Initialize() {
 
 	phase_ = Phase::kFadeIn;
-	// ファイル名を指定してテクスチャを読み込む
-	textureHandle_ = TextureManager::Load("./Resources./uvChecker.png");
 
 	// 3Dモデルの生成
 	modelBlock_ = Model::CreateFromOBJ("block");
 	modelSkydome_ = Model::CreateFromOBJ("SkyDome", true);
 	modelPlayer_ = Model::CreateFromOBJ("player", true);
 	modelEnemy_ = Model::CreateFromOBJ("enemy", true);
-	modelLord_ = Model::CreateFromOBJ("goal", true);
 	modelAttack_ = Model::CreateFromOBJ("playerAttack", true);
 	modelParticle_ = Model::CreateFromOBJ("deathParticle", true);
 	modelGosign_ = Model::CreateFromOBJ("Go", true);
+	modelFuelZone_ = Model::CreateFromOBJ("FuelZone", true);
+	modelRoad_ = Model::CreateFromOBJ("road", true);
+	modelStageBlocks_ = Model::CreateFromOBJ("field", true);
 
 	textureHandleGraph_ = TextureManager::Load("white1x1.png");
 	textureHandleContinue_ = TextureManager::Load("./Resources./Continue/Continue.png");
@@ -42,6 +42,8 @@ void GameScene::Initialize() {
 
 	mapChipField_->LoadMapchipCsv("Resources/blocks.csv", 0);
 	mapChipField_->LoadMapchipCsv("Resources/blocks2.csv", 1);
+
+	worldTransformStageBlocks_.Initialize();
 
 	// 自キャラ生成
 	player_ = std::make_unique<Player>();
@@ -303,26 +305,6 @@ void GameScene::Update() {
 				enemies_.push_back(std::move(newEnemy));
 			}
 		}
-
-		// コンティニュー演出用
-	 debugDeathTimer_ += 1.0f / 60.0f;
-		if (debugDeathTimer_ >= 1.1f) {
-			debugDeathTimer_ = 0.0f;
-
-			// プレイヤーの死亡処理（引数はnullptrでOK）
-			if (player_ && !player_->IsDead()) {
-				player_->OnCollisionWithEnemy(nullptr);
-			}
-
-			// シーンのフェーズを死亡演出（kDeath）へ移行
-			phase_ = Phase::kDeath;
-			deathTimer_ = 0.0f;
-
-			// カメラシェイク開始
-			if (cameraController_) {
-				cameraController_->StartShake(0.8f, 0.5f);
-			}
-		}
 		break;
 	}
 	case Phase::kDeath:
@@ -489,14 +471,17 @@ void GameScene::Draw() {
 				continue;
 
 			MapChipType type0 = mapChipField_->GetMapChipTypeByIndex(i, j, 0);
-			if (type0 == MapChipType::klord) {
-				modelLord_->Draw(*wt, camera_);
+			if (type0 == MapChipType::kRoad) {
+				modelRoad_->Draw(*wt, camera_);
 			} else {
-				modelBlock_->Draw(*wt, camera_);
+				//modelBlock_->Draw(*wt, camera_);
 			}
 		}
 	}
-
+	if (modelStageBlocks_) {
+		worldTransformStageBlocks_.TransferMatrix();
+		modelStageBlocks_->Draw(worldTransformStageBlocks_, camera_);
+	}
 	// レイヤー1の描画（壁、ガソリン補給場所）
 	for (uint32_t i = 0; i < worldTransformLayer1_.size(); ++i) {
 		for (uint32_t j = 0; j < worldTransformLayer1_[i].size(); ++j) {
@@ -507,8 +492,8 @@ void GameScene::Draw() {
 			MapChipType type1 = mapChipField_->GetMapChipTypeByIndex(i, j, 1);
 			if (type1 == MapChipType::kBlock) {
 				modelBlock_->Draw(*wt, camera_);
-			} else {
-				modelBlock_->Draw(*wt, camera_);
+			} else if (type1 == MapChipType::kFuel) {
+				modelFuelZone_->Draw(*wt, camera_);
 			}
 		}
 	}

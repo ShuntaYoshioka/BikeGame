@@ -41,14 +41,14 @@ void Player::Update() {
 		MapChipField::IndexSet indexSet = mapChipField_->GetMapChipIndexSetByPosition(worldTransform_.translation_);
 
 		// レイヤー0とレイヤー1の両方を確認
-		MapChipType typeLayer0 = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex, 1);
-		MapChipType typeLayer1 = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex, 0);
+		MapChipType typeLayer1 = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex, 1);
+		MapChipType typeLayer0 = mapChipField_->GetMapChipTypeByIndex(indexSet.xIndex, indexSet.yIndex, 0);
 
-		if (typeLayer0 == MapChipType::kFuel) {
+		if (typeLayer1 == MapChipType::kFuel) {
 			RestoreFuel(0.5f);
 		}
 
-		if (typeLayer1 == MapChipType::klord) {
+		if (typeLayer0 == MapChipType::kRoad) {
 			currentForwardSpeed_ = kRoadSpeed;
 		}
 	}

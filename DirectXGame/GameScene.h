@@ -49,14 +49,15 @@ private:
 	KamataEngine::Model* modelSkydome_ = nullptr;
 	KamataEngine::Model* modelPlayer_ = nullptr;
 	KamataEngine::Model* modelEnemy_ = nullptr;
-	KamataEngine::Model* modelLord_ = nullptr;
 	KamataEngine::Model* modelAttack_ = nullptr;
 	KamataEngine::Model* modelParticle_ = nullptr;
 	KamataEngine::Model* modelGosign_ = nullptr;
+	KamataEngine::Model* modelFuelZone_ = nullptr;
+	KamataEngine::Model* modelRoad_ = nullptr;
+	KamataEngine::Model* modelStageBlocks_ = nullptr;
 
 	// テクスチャハンドル
 	uint32_t textureHandleContinue_ = 0;
-	uint32_t textureHandle_ = 0;
 	uint32_t textureHandleGraph_ = 0;
 	uint32_t textureHandleWhite_ = 0;
 
@@ -95,6 +96,8 @@ private:
 	std::vector<std::unique_ptr<Particle>> particles_;
 	// カメラコントローラ
 	std::unique_ptr<CameraController> cameraController_ = nullptr;
+
+	KamataEngine::WorldTransform worldTransformStageBlocks_;
 
 	// マップチップフィールド
 	MapChipField* mapChipField_;

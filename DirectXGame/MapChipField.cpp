@@ -11,7 +11,7 @@ std::map<std::string, MapChipType> mapChipTable = {
     {"0", MapChipType::kBlank},
     {"1", MapChipType::kBlock},
     {"2", MapChipType::kFuel },
-    {"3", MapChipType::klord }
+    {"3", MapChipType::kRoad }
 };
 }
 
