@@ -15,7 +15,12 @@
 class GameScene {
 
 public:
-	enum class Phase { kFadeIn, kPlay, kDeath, kFadeOut, kContinue };
+	enum class Phase { kFadeIn, 
+		kPlay,
+		kDeath, 
+		kFadeOut, 
+		kContinue 
+	};
 
 	// 初期化
 	void Initialize();
@@ -115,7 +120,7 @@ private:
 
 	// 敵
 	float enemySpawnTimer_ = 0.0f; // スポーン用タイマー
-	const float kEnemySpawnInterval = 3.0f;
+	const float kEnemySpawnInterval = 1.5f;
 	int enemyArmyHp_ = 10; // 総合HP　撃破数
 
 	// デス時のタイマー

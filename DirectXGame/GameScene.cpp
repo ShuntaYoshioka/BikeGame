@@ -300,7 +300,9 @@ void GameScene::Update() {
 		if (enemySpawnTimer_ >= kEnemySpawnInterval) {
 			enemySpawnTimer_ = 0.0f;
 
-			auto newEnemy = std::unique_ptr<Enemy>(Enemy::Create(modelEnemy_, &camera_, player_.get(), mapChipField_));
+			EnemyType spawnType = (rand() % 2 == 0) ? EnemyType::kMoving : EnemyType::kDash;
+
+			auto newEnemy = std::unique_ptr<Enemy>(Enemy::Create(modelEnemy_, &camera_, player_.get(), mapChipField_, spawnType));
 			if (newEnemy) {
 				enemies_.push_back(std::move(newEnemy));
 			}
