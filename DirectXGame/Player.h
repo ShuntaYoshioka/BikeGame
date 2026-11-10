@@ -26,11 +26,11 @@ public:
 	bool IsDead() const { return isDead_; }
 	bool IsVisible() const { return isVisible_; }
 
-	float GetMaxFuel() const { return kMaxFuel; }
+	float GetMaxFuel() const { return kMaxFuel_; }
 	float GetFuel() const { return fuel_; }
 
 	bool IsOutOfFuel() const { return fuel_ <= 0.0f; }
-	void AddFuel(float amount) { fuel_ = (std::min)(fuel_ + amount, kMaxFuel); }
+	void AddFuel(float amount) { fuel_ = (std::min)(fuel_ + amount, kMaxFuel_); }
 
 	AABB GetAABB();
 
@@ -45,6 +45,12 @@ public:
 	void OnCollisionWithBlock();
 	void OnCollisionWithEnemy(const Enemy* enemy);
 
+	// レベル
+	void AddMovementLevel() { movementLevel_++; }
+	int GetMovementLevel() const { return movementLevel_; }
+
+	void AddMaxFuel(float amount);
+
 private:
 	// ワールド変換データ & モデル & カメラ
 	KamataEngine::WorldTransform worldTransform_;
@@ -57,17 +63,17 @@ private:
 	KamataEngine::Vector3 velocity_ = {0.0f, 0.0f, 0.0f};
 
 	static inline const float kForwardSpeed = 0.06f; // 前進スピード
-	static inline const float kTurnSpeed = 0.1f;    // 左右の回転スピード
+	static inline const float kTurnSpeed = 0.1f;     // 左右の回転スピード
 	static inline const float kRadius = 0.5f;        // 当たり判定の半径
 
-	// 突進
-	static inline const float kMaxFuel = 100.0f;
+	// 発進
+	float kMaxFuel_ = 150.0f;
 	static inline const float kFuelConsumption = 0.1f;
 
-	bool isMovingForward ;
+	bool isMovingForward;
 	bool isMovingBackward;
 
-	float fuel_ = kMaxFuel;
+	float fuel_ = kMaxFuel_;
 
 	bool isDead_ = false;
 
@@ -75,9 +81,19 @@ private:
 
 	float currentForwardSpeed_ = kForwardSpeed;
 
-	//揺れてるときは描画する用
+	// 揺れてるときは描画する用
 	bool isVisible_ = true;
 
-	//座標保存用
+	// 座標保存用
 	KamataEngine::Vector3 prevPosition_;
+
+	// 強化後
+	int movementLevel_ = 0; // 強化レベル
+
+	// 突進
+	bool isEvading_ = false;
+	float evadeTimer_ = 0.0f;
+	KamataEngine::Vector3 evadeDirection_ = {0.0f, 0.0f, 0.0f}; // 突進方向
+	const float kEvadeDuration = 0.1f;                         // 突進時間
+	const float kEvadeSpeed = 0.2f;                             // 突進スピード
 };

@@ -69,9 +69,10 @@ private:
 	bool isDashing_ = false;
 	bool isWaiting_ = false;
 	float waitTimer_ = 0.0f;
+	float dashTimer_ = 0.0f;
 
 	// スポーン
-	static KamataEngine::Vector3 spawnPosition(const KamataEngine::Vector3& playerPos);
+	static KamataEngine::Vector3 spawnPosition(const KamataEngine::Vector3& playerPos, MapChipField* mapChipField);
 	float angle = 0.0f;
 
 	// ブロックとの衝突判定用

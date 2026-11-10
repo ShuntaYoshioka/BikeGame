@@ -22,7 +22,7 @@ void Player::Initialize(Model* model, Camera* camera, const Vector3& position) {
 	worldTransform_.TransferMatrix();
 
 	velocity_ = {0.0f, 0.0f, 0.0f};
-	fuel_ = kMaxFuel;
+	fuel_ = kMaxFuel_;
 	isDead_ = false;
 }
 
@@ -55,11 +55,32 @@ void Player::Update() {
 
 	// 前後同時押しを考慮した移動処理
 	if (fuel_ > 0.0f) {
+		// 行動の処理はここで
 		Input* input = Input::GetInstance();
+
+				// 回避ダッシュ
+		if (isEvading_) {
+			worldTransform_.translation_.x += evadeDirection_.x * kEvadeSpeed;
+			worldTransform_.translation_.z += evadeDirection_.z * kEvadeSpeed;
+			evadeTimer_ += 1.0f / 60.0f;
+			if (evadeTimer_ >= kEvadeDuration) {
+				isEvading_ = false;
+			}
+
+		}else 	if (movementLevel_ >= 1 && input->TriggerKey(DIK_LSHIFT)) {
+			float rotY = worldTransform_.rotation_.y;
+			evadeDirection_.x = std::sin(rotY);
+			evadeDirection_.z = std::cos(rotY);
+
+			isEvading_ = true;
+			evadeTimer_ = 0.0f;
+
+		}
 
 		isMovingForward = input->PushKey(DIK_W);
 		isMovingBackward = input->PushKey(DIK_S);
 
+		// 前進と後退の処理
 		if (isMovingForward && !isMovingBackward) {
 			fuel_ -= kFuelConsumption;
 			if (fuel_ <= 0.0f) {
@@ -91,6 +112,8 @@ void Player::Update() {
 				worldTransform_.rotation_.y -= kTurnSpeed;
 			}
 		}
+
+
 		velocity_.x = std::sin(worldTransform_.rotation_.y) * currentForwardSpeed_;
 		velocity_.z = std::cos(worldTransform_.rotation_.y) * currentForwardSpeed_;
 
@@ -111,8 +134,8 @@ void Player::Update() {
 // 描画処理
 void Player::Draw() {
 	if (isVisible_ && model_ && camera_) {
-			model_->Draw(worldTransform_, *camera_);
-		}
+		model_->Draw(worldTransform_, *camera_);
+	}
 }
 
 AABB Player::GetAABB() {
@@ -131,8 +154,8 @@ AABB Player::GetAABB() {
 // 燃料回復
 void Player::RestoreFuel(float amount) {
 	fuel_ += amount;
-	if (fuel_ > kMaxFuel) {
-		fuel_ = kMaxFuel; // 最大値は超えない
+	if (fuel_ > kMaxFuel_) {
+		fuel_ = kMaxFuel_; // 最大値は超えない
 	}
 }
 
@@ -147,4 +170,9 @@ void Player::OnCollisionWithEnemy(const Enemy* enemy) {
 	isDead_ = true;
 	// 止める
 	velocity_ = {0.0f, 0.0f, 0.0f};
+}
+
+void Player::AddMaxFuel(float amount) {
+	kMaxFuel_ += amount;
+	fuel_ = kMaxFuel_; // 回復も兼ねる場合
 }

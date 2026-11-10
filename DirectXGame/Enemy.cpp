@@ -99,7 +99,21 @@ void Enemy::UpdateDash() {
 		}
 
 		isDashing_ = true;
+		dashTimer_ = 0.0f;
 	} else {
+		dashTimer_ += 1.0f / 60.0f;
+		if (dashTimer_ >= 6.5f) { // 秒経過ごとにプレイヤーを追い直す場合
+			targetPosition_ = player_->GetWorldPosition();
+			dashTimer_ = 0.0f; 
+
+			// 向きも再調整
+			KamataEngine::Vector3 dir;
+			dir.x = targetPosition_.x - worldTransform_.translation_.x;
+			dir.z = targetPosition_.z - worldTransform_.translation_.z;
+			if (std::sqrt(dir.x * dir.x + dir.z * dir.z) > 0.001f) {
+				worldTransform_.rotation_.y = std::atan2(dir.x, dir.z);
+			}
+		}
 		KamataEngine::Vector3 diff;
 		diff.x = targetPosition_.x - worldTransform_.translation_.x;
 		diff.z = targetPosition_.z - worldTransform_.translation_.z;
@@ -156,7 +170,7 @@ Enemy* Enemy::Create(KamataEngine::Model* model, KamataEngine::Camera* camera, P
 		return nullptr;
 
 	// スポーン位置を計算
-	KamataEngine::Vector3 spawnPos = spawnPosition(player->GetWorldPosition());
+	KamataEngine::Vector3 spawnPos = spawnPosition(player->GetWorldPosition(), mapChipField);
 
 	Enemy* enemy = new Enemy();
 	enemy->state_ = type;
@@ -167,14 +181,41 @@ Enemy* Enemy::Create(KamataEngine::Model* model, KamataEngine::Camera* camera, P
 	return enemy;
 }
 
-KamataEngine::Vector3 Enemy::spawnPosition(const KamataEngine::Vector3& playerPos) {
+KamataEngine::Vector3 Enemy::spawnPosition(const KamataEngine::Vector3& playerPos, MapChipField* mapChipField) {
 	// ランダムな角度
 	float angle = static_cast<float>(rand()) / RAND_MAX * 3.14f * 2.0f;
 	// プレイヤーからの距離12〜18で、スポーン
 	float distance = 12.0f + static_cast<float>(rand()) / RAND_MAX * 6.0f;
 
-	// スポーン座標を計算
-	return {playerPos.x + std::cos(angle) * distance, 0.0f, playerPos.z + std::sin(angle) * distance};
+	// 仮のスポーン座標を計算
+	KamataEngine::Vector3 spawnPos = {playerPos.x + std::cos(angle) * distance, 0.0f, playerPos.z + std::sin(angle) * distance};
+	// マップチップフィールドが渡されている場合、範囲内に収める
+	if (mapChipField) {
+		MapChipField::IndexSet indexSet = mapChipField->GetMapChipIndexSetByPosition(spawnPos);
+
+		uint32_t maxH = mapChipField->GetNumBlockHorizontal();
+		uint32_t maxV = mapChipField->GetNumBlockVirtical();
+
+		// マップの端（外側）に出ないようにインデックスをクランプする（余裕を持って端から1〜2マス内側に）
+		if (indexSet.xIndex < 2) {
+			indexSet.xIndex = 2;
+		}
+		if (indexSet.xIndex >= maxH - 2) {
+			indexSet.xIndex = maxH - 3;
+		}
+		if (indexSet.yIndex < 2) {
+			indexSet.yIndex = 2;
+		}
+		if (indexSet.yIndex >= maxV - 2) {
+			indexSet.yIndex = maxV - 3;
+		}
+
+		// クランプした安全なインデックスから正しいワールド座標を再取得する
+		spawnPos = mapChipField->GetMapChipPositionByIndex(indexSet.xIndex, indexSet.yIndex);
+		spawnPos.y = 0.0f; // 高さを合わせる
+	}
+
+	return spawnPos;
 }
 
 void Enemy::CheckMapChipCollisionX() {
